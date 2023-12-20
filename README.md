@@ -35,12 +35,12 @@ Once you have completed the setup part, all you have to do is run the python fil
 ```python3 constructionapi.py```
 
 If you want to run it as a docker image, you have to build the image and run it \
-```docker build -t dataapi.py .```
-```docker build -t constructionapi.py```
+```sudo docker build -t dataapi.py .``` \
+```sudo docker build -t constructionapi.py .```
 
 then run the docker builds \
-```docker run -p 5500:5500 --env-file .env dataapi.py```
-```docker run -p 5500:5600 --env-file .env constructionapi.py```
+```sudo docker run -p 5500:5500 --env-file .env dataapi.py``` \
+```sudo docker run -p 5500:5600 --env-file .env constructionapi.py```
 - Docker will automatically install the requirements and setup an environment for you so if you are running the APIs using docker then there is no need to install the dependencies and setting up the python virtual environment in the previous step.
 - Data API will be running on the public IP of the server on port 5500 (default)
 - Construction API will be running on the public IP of the server on port 5600 (default)
