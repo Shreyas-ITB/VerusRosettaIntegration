@@ -14,7 +14,7 @@ from dotenv import load_dotenv, find_dotenv
 app = Flask(__name__)
 load_dotenv(find_dotenv())
 RPCURL = os.environ.get("RPCURL")
-PORT = os.environ.get("PORT")
+PORT = os.environ.get("DATAPIPORT")
 
 
 # Function definitions.
