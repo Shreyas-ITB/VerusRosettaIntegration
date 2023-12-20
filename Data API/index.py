@@ -1,0 +1,431 @@
+# Verus Network Data API
+# Used to provide data for rosetta integration 
+# Coded by Shreyas from the verus community
+
+
+# Module imports.
+from flask import Flask, jsonify, request, render_template
+import os
+import requests
+from dotenv import load_dotenv, find_dotenv
+
+
+# Initializing Flask module and getting the env variable values.
+app = Flask(__name__)
+load_dotenv(find_dotenv())
+RPCURL = os.environ.get("RPCURL")
+PORT = os.environ.get("PORT")
+
+
+# Function definitions.
+
+# Helps to send the request to the RPC.
+def send_request(method, url, headers, data):
+    response = requests.request(method, url, headers=headers, json=data)
+    response.raise_for_status()
+    return response.json()
+
+
+# Fetches the network options from the RPC.
+def get_network_options():
+    # Define the JSON-RPC request payload
+    payload = {
+        "jsonrpc": "1.0",
+        "id": "curltest",
+        "method": "getnetworkinfo",
+        "params": []
+    }
+
+    # Make the request using the provided function
+    response_json = send_request("POST", RPCURL, {'content-type': 'text/plain;'}, payload)
+
+    # Check if the request was successful
+    if "result" in response_json:
+        # Parse the response JSON and extract relevant information
+        network_status = {
+            "version": response_json["result"]["version"],
+            "subversion": response_json["result"]["subversion"],
+            "protocolversion": response_json["result"]["protocolversion"],
+            "localservices": response_json["result"]["localservices"],
+            "timeoffset": response_json["result"]["timeoffset"],
+            "connections": response_json["result"]["connections"],
+            "networks": [
+                {
+                    "name": network["name"],
+                    "limited": network["limited"],
+                    "reachable": network["reachable"],
+                    "proxy": network.get("proxy", "")
+                }
+                for network in response_json["result"]["networks"]
+            ],
+            "relayfee": response_json["result"]["relayfee"],
+            "localaddresses": [
+                {
+                    "address": address["address"],
+                    "port": address["port"],
+                    "score": address["score"]
+                }
+                for address in response_json["result"]["localaddresses"]
+            ],
+            "warnings": response_json["result"].get("warnings", "")
+        }
+
+        return network_status
+    else:
+        # Handle the error case
+        return None
+
+
+# Fetches the network status from the RPC.
+def get_network_status():
+    # Define the JSON-RPC request payload
+    payload = {
+        "jsonrpc": "1.0",
+        "id": "curltest",
+        "method": "getblockchaininfo",
+        "params": []
+    }
+
+    # Make the request using the provided function
+    response_json = send_request("POST", RPCURL, {'content-type': 'text/plain;'}, payload)
+
+    # Check if the request was successful
+    if "result" in response_json:
+        # Parse the response JSON and extract relevant information
+        blockchain_info = response_json["result"]
+
+        network_options = {
+            "chain": blockchain_info["chain"],
+            "name": blockchain_info["name"],
+            "chainid": blockchain_info["chainid"],
+            "blocks": blockchain_info["blocks"],
+            "headers": blockchain_info["headers"],
+            "bestblockhash": blockchain_info["bestblockhash"],
+            "difficulty": blockchain_info["difficulty"],
+            "verificationprogress": blockchain_info["verificationprogress"],
+            "chainwork": blockchain_info["chainwork"],
+            "chainstake": blockchain_info["chainstake"],
+            "pruned": blockchain_info["pruned"],
+            "size_on_disk": blockchain_info["size_on_disk"],
+            "commitments": blockchain_info["commitments"],
+            "valuePools": [
+                {
+                    "id": pool["id"],
+                    "monitored": pool["monitored"],
+                    "chainValue": pool["chainValue"],
+                    "chainValueZat": pool["chainValueZat"]
+                }
+                for pool in blockchain_info.get("valuePools", [])
+            ],
+            "softforks": blockchain_info.get("softforks", []),
+            "upgrades": blockchain_info.get("upgrades", {}),
+            "consensus": blockchain_info.get("consensus", {})
+        }
+
+        return network_options
+    else:
+        # Handle the error case
+        return None
+
+
+# Fetches the network versions from the RPC.
+def get_network_version():
+    try:
+        blockchain_info = get_network_options()
+        network_version = {
+        "rosetta_version": "1.2.5",
+        "node_version": blockchain_info["version"],
+        "sub_version": blockchain_info["subversion"],
+        "protocol_version": blockchain_info["protocolversion"],
+        "middleware_version": "0.2.7",
+        "metadata": None
+    }
+        return network_version
+    except:
+        return None
+
+
+# Gets the block information, takes in an argument called identifier which should be a transaction ID or a block number.
+def get_block_info(identifier):
+    # Define the JSON-RPC request payload
+    payload = {
+        "jsonrpc": "1.0",
+        "id": "curltest",
+        "method": "getblock",
+        "params": [f"{identifier}"]
+    }
+
+    # Make the request using the provided function
+    response_json = send_request("POST", RPCURL, {'content-type': 'text/plain;'}, payload)
+
+    # Check if the request was successful
+    if "result" in response_json:
+        block_info = response_json["result"]
+
+        return block_info
+    elif "error" in response_json:
+        return response_json["error"]["message"]
+    else:
+        return None
+
+
+# Gets the transaction information, takes in an argument called transaction ID.
+def get_transaction_info(txid):
+    # Define the JSON-RPC request payload
+    payload = {
+        "jsonrpc": "1.0",
+        "id": "curltest",
+        "method": "getrawtransaction",
+        "params": [txid, 1]
+    }
+
+    # Make the request using the provided function
+    response_json = send_request("POST", RPCURL, {'content-type': 'text/plain;'}, payload)
+
+    # Check if the request was successful
+    if "result" in response_json:
+        transaction_info = response_json["result"]
+
+        return transaction_info
+    elif "error" in response_json:
+        return response_json["error"]["message"]
+    else:
+        return None
+
+
+# Gets all the unconfirmed transactions from the mempool.
+def get_mempool_info():
+    # Define the JSON-RPC request payload
+    payload = {
+        "jsonrpc": "1.0",
+        "id": "curltest",
+        "method": "getrawmempool",
+        "params": []
+    }
+
+    # Make the request using the provided function
+    response_json = send_request("POST", RPCURL, {'content-type': 'text/plain;'}, payload)
+
+    # Check if the request was successful
+    if "result" in response_json:
+        mempool_info = response_json["result"]
+
+        return mempool_info
+    else:
+        # Handle the error case
+        return None
+
+
+# Gets the balance of an address, takes in an argument called address.
+def get_address_balance(address):
+    # Define the JSON-RPC request payload
+    payload = {
+        "jsonrpc": "1.0",
+        "id": "curltest",
+        "method": "getaddressbalance",
+        "params": [{"addresses": [address]}]
+    }
+
+    # Make the request using the provided function
+    response_json = send_request("POST", RPCURL, {'content-type': 'text/plain;'}, payload)
+
+    # Check if the request was successful
+    if "result" in response_json:
+        balance_info = response_json["result"]
+
+        return balance_info
+    elif "error" in response_json:
+        return response_json["error"]["message"]
+    else:
+        return None
+
+
+# Gets the unspent transactions of an address, takes in an argument called address.
+def get_address_utxos(address):
+    # Define the JSON-RPC request payload
+    payload = {
+        "jsonrpc": "1.0",
+        "id": "curltest",
+        "method": "getaddressutxos",
+        "params": [{"addresses": [address]}]
+    }
+
+    # Make the request using the provided function
+    response_json = send_request("POST", RPCURL, {'content-type': 'text/plain;'}, payload)
+
+    # Check if the request was successful
+    if "result" in response_json:
+        utxos = response_json["result"]
+
+        return utxos
+    elif "error" in response_json:
+        return response_json["error"]["message"]
+    else:
+        return None
+
+
+# API Endpoints
+    
+# Endpoint that is used to get the network status.
+@app.route('/network/status', methods=['POST'])
+def network_status():
+    status_data = get_network_status()
+
+    if status_data:
+        return jsonify({"network_status": status_data}), 200
+    else:
+        return jsonify({
+            "code": 500,
+            "message": "Failed to fetch network status",
+            "description": "There was an error while fetching network status from the RPC"
+        }), 500
+
+
+# Endpoint that is used to get network options.
+@app.route('/network/options', methods=['POST'])
+def network_options():
+    # Fetch network options from your API
+    options_data = get_network_options()
+
+    if options_data:
+        return jsonify({"network_options": options_data}), 200
+    else:
+        return jsonify({
+            "code": 500,
+            "message": "Failed to fetch network options",
+            "description": "There was an error while fetching network options from the RPC"
+        }), 500
+
+
+# Endpoint that is used to get the version information.
+@app.route('/network/rosetta/version', methods=['POST'])
+def network_rosetta_version():
+    # Fetch network version from your API
+    version_data = get_network_version()
+
+    if version_data:
+        # Add the specified text to the output
+        version_data["message"] = f"Verus Rosetta Coinbase blockchain integration DataAPI running on port {PORT}, all the information here is fetched from the Verus RPC servers."
+        return jsonify({"network_version": version_data}), 200
+    else:
+        return jsonify({
+            "code": 500,
+            "message": "Failed to fetch network version",
+            "description": "There was an error while fetching network version from the RPC"
+        }), 500
+
+
+# Endpoint that is used to get the information of a block.
+@app.route('/block', methods=['POST'])
+def block_info():
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    block_identifier = data.get("block_identifier")
+
+    if not block_identifier:
+        return jsonify({"error": "Block identifier not provided"}), 400
+
+    block_data = get_block_info(block_identifier)
+
+    if block_data:
+        return jsonify({"block_info": block_data}), 200
+    else:
+        return jsonify({
+            "code": 500,
+            "message": "Failed to fetch block information",
+            "description": "There was an error while fetching block information from the RPC"
+        }), 500
+
+
+# Endpoint that is used to get the information about a block transaction.
+@app.route('/block/transaction', methods=['POST'])
+def block_transaction_info():
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    txid = data.get("transaction_id")
+
+    if not txid:
+        return jsonify({"error": "Transaction ID not provided"}), 400
+
+    transaction_data = get_transaction_info(txid)
+
+    if transaction_data:
+        return jsonify({"transaction_info": transaction_data}), 200
+    else:
+        return jsonify({
+            "code": 500,
+            "message": "Failed to fetch transaction information",
+            "description": "There was an error while fetching transaction information from the RPC"
+        }), 500
+
+
+# Endpoint that is used to fetch mempool transactions.
+@app.route('/mempool', methods=['POST'])
+def mempool_info():
+    mempool_data = get_mempool_info()
+    if mempool_data:
+        return jsonify({"mempool_info": mempool_data}), 200
+    else:
+        return jsonify({
+            "code": 500,
+            "message": "Failed to fetch mempool information",
+            "description": "There was an error while fetching mempool information from the RPC"
+        }), 500
+
+
+# Endpoint that is used to fetch an account's balance.
+@app.route('/account/balance', methods=['POST'])
+def account_balance():
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    address = data.get("address")
+
+    if not address:
+        return jsonify({"error": "Address not provided"}), 400
+
+    balance_data = get_address_balance(address)
+
+    if balance_data:
+        return jsonify({"balance_info": balance_data}), 200
+    else:
+        return jsonify({
+            "code": 500,
+            "message": "Failed to fetch balance information",
+            "description": "There was an error while fetching balance information from the API"
+        }), 500
+
+
+# Endpoint that is used to fetch the unspend amount of coins/transaction in an account.
+@app.route('/account/coins', methods=['POST'])
+def account_coins():
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    address = data.get("address")
+
+    if not address:
+        return jsonify({"error": "Address not provided"}), 400
+
+    utxos_data = get_address_utxos(address)
+
+    if utxos_data:
+        return jsonify({"utxos": utxos_data}), 200
+    else:
+        return jsonify({
+            "code": 500,
+            "message": "Failed to fetch UTXOs",
+            "description": "There was an error while fetching UTXOs from the API"
+        }), 500
+
+# Run the API
+if __name__ == '__main__':
+    # Only use the debug=True in development environment.
+    # Use WSGI to run the API in production environment.
+    app.run(host='0.0.0.0', port=PORT, debug=True)
