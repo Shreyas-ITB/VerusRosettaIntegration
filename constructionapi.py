@@ -8,14 +8,22 @@ from flask import Flask, jsonify, request, render_template
 import os
 import requests
 from dotenv import load_dotenv, find_dotenv
-
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+import gevent.pywsgi
 
 # Initializing Flask module and getting the env variable values.
 app = Flask(__name__)
 load_dotenv(find_dotenv())
 RPCURL = os.environ.get("RPCURL")
 PORT = os.environ.get("CONSTAPIPORT")
-
+RUN_PRODUCTION = os.environ.get("RUN_PRODUCTION")
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+)
 
 # Function definitions.
 
@@ -81,6 +89,7 @@ def submit_signed_transaction(signed_hex):
 
 # Endpoint that is used to create a raw unsigned transaction.
 @app.route('/construction/payloads', methods=['POST'])
+@limiter.limit("2 per 5 minutes", override_defaults=False)
 def create_unsigned_transaction_route():
     data = request.get_json()
     if not data:
@@ -103,6 +112,7 @@ def create_unsigned_transaction_route():
 
 # Endpoint that is used to verify and sign a raw unsigned transaction.
 @app.route('/construction/parse', methods=['POST'])
+@limiter.limit("2 per 5 minutes", override_defaults=False)
 def parse_and_sign_transaction_route():
     data = request.get_json()
     if not data:
@@ -122,6 +132,7 @@ def parse_and_sign_transaction_route():
 
 # Endpoint that is used to broadcast a signed transaction into the blockchain.
 @app.route('/construction/submit', methods=['POST'])
+@limiter.limit("2 per 5 minutes", override_defaults=False)
 def submit_signed_transaction_route():
     data = request.get_json()
     if not data:
@@ -142,4 +153,11 @@ def submit_signed_transaction_route():
 if __name__ == '__main__':
     # Only use the debug=True in development environment.
     # Use WSGI to run the API in production environment.
-    app.run(host='0.0.0.0', port=PORT, debug=True)
+    if RUN_PRODUCTION == "False":
+        app.run(host='0.0.0.0', port=PORT, debug=True)
+    elif RUN_PRODUCTION == "True":
+        app_server = gevent.pywsgi.WSGIServer(('0.0.0.0', PORT), app)
+        app_server.serve_forever()
+    else:
+        print("Please set the RUN_PRODUCTION variable as True or False, Running the API in development mode since the variable is not set...")
+        app.run(host='0.0.0.0', port=PORT, debug=True)
