@@ -50,7 +50,7 @@ then run the docker builds \
 ### Data API Endpoints
 
 - ```/network/status``` Retrieve the current status of the network.
-```
+```sh
 # Call the endpoint with curl:
 curl -X POST http://127.0.0.1:5500/network/status
 ```
@@ -64,8 +64,64 @@ print(response.json())
 ```
 
 - ```/network/options``` Get the options of the network, including versions and supported features.
+```sh
+# Call the endpoint with curl:
+curl -X POST http://127.0.0.1:5500/network/options
+```
+```py
+# Make a request using python:
+import requests
+
+url = "http://127.0.0.1:5500/network/options"
+response = requests.post(url)
+print(response.json())
+```
+
 - ```/network/rosetta/version``` Retrieve the Rosetta API version information.
+```sh
+# Call the endpoint with curl:
+curl -X POST http://127.0.0.1:5500/network/rosetta/version
+```
+```py
+# Make a request using python:
+import requests
+
+url = "http://127.0.0.1:5500/network/rosetta/version"
+response = requests.post(url)
+print(response.json())
+```
+
 - ```/block``` Get information about a specific block.
+```sh
+# Call the endpoint with curl:
+
+# Fetch using a hash as an argument
+curl -X POST -H "Content-Type: application/json" -d '{"block_identifier": "0x1f2cc6c5027d2f201a5453ad1119574d2aed23a392654742ac3c78783c071f85"}' http://127.0.0.1:5500/block
+
+# Fetch using a block height as an argument
+curl -X POST -H "Content-Type: application/json" -d '{"block_identifier": "12800"}' http://127.0.0.1:5500/block
+```
+```py
+# Make a request using python:
+import requests
+
+url = "http://127.0.0.1:5500/block"
+
+# Fetch using a hash as an argument
+payload = {
+    "block_identifier": "0x1f2cc6c5027d2f201a5453ad1119574d2aed23a392654742ac3c78783c071f85"
+}
+response = requests.post(url, json=payload)
+print(response.json())
+
+# Fetch using a block height as an argument
+payload = {
+    "block_identifier": "12800"
+}
+response = requests.post(url, json=payload)
+print(response.json())
+```
+
 - ```/block/transaction``` Get information about a specific transaction in a block.
 - ```/mempool``` Get information about transactions currently in the mempool.
 - ```/account/balance``` Get the amount of coins that is present in an address.
