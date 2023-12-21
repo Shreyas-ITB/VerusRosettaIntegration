@@ -123,15 +123,120 @@ print(response.json())
 ```
 
 - ```/block/transaction``` Get information about a specific transaction in a block.
+```sh
+# Call the endpoint with curl:
+curl -X POST -H "Content-Type: application/json" -d '{"transaction_id": "0x2f23fd8cca835af21f3ac375bac601f97ead75f2e79143bdf71fe2c4be043e8f"}' http://127.0.0.1:5500/block/transaction
+```
+```py
+# Make a request using python:
+import requests
+
+url = "http://127.0.0.1:5500/block/transaction"
+payload = {
+    "transaction_id": "0x2f23fd8cca835af21f3ac375bac601f97ead75f2e79143bdf71fe2c4be043e8f"
+}
+response = requests.post(url, json=payload)
+print(response.json())
+```
 - ```/mempool``` Get information about transactions currently in the mempool.
+```sh
+# Call the endpoint with curl:
+curl -X POST http://127.0.0.1:5500/mempool
+```
+```py
+# Make a request using python:
+import requests
+
+url = "http://127.0.0.1:5500/mempool"
+response = requests.post(url)
+print(response.json())
+```
 - ```/account/balance``` Get the amount of coins that is present in an address.
+```sh
+# Call the endpoint with curl:
+curl -X POST -H "Content-Type: application/json" -d '{"address": "RCG8KwJNDVwpUBcdoa6AoHqHVJsA1uMYMR"}' http://127.0.0.1:5500/account/balance
+```
+```py
+# Make a request using python:
+import requests
+
+url = "http://127.0.0.1:5500/account/balance"
+payload = {
+    "address": "RCG8KwJNDVwpUBcdoa6AoHqHVJsA1uMYMR"
+}
+response = requests.post(url, json=payload)
+print(response.json())
+```
 - ```/account/coins``` Get the number of unspent transactions present in an address.
+```sh
+# Call the endpoint with curl:
+curl -X POST -H "Content-Type: application/json" -d '{"address": "RCG8KwJNDVwpUBcdoa6AoHqHVJsA1uMYMR"}' http://127.0.0.1:5500/account/coins
+```
+```py
+# Make a request using python:
+import requests
+
+url = "http://127.0.0.1:5500/account/coins"
+payload = {
+    "address": "RCG8KwJNDVwpUBcdoa6AoHqHVJsA1uMYMR"
+}
+response = requests.post(url, json=payload)
+print(response.json())
+```
 
 ### Construction API Endpoints
 
 - ```/construction/payloads``` Create an unsigned raw transaction.
+```sh
+# Call the endpoint with curl:
+curl -X POST -H "Content-Type: application/json" -d '{"txid": "0x2f23fd8cca835af21f3ac375bac601f97ead75f2e79143bdf71fe2c4be043e8f", "vout": 0, "address": "RCG8KwJNDVwpUBcdoa6AoHqHVJsA1uMYMR", "amount": 0.01}' http://127.0.0.1:5600/construction/payloads
+```
+```py
+# Make a request using python:
+import requests
+
+url = "http://127.0.0.1:5600/construction/payloads"
+payload = {
+    "txid": "0x2f23fd8cca835af21f3ac375bac601f97ead75f2e79143bdf71fe2c4be043e8f",
+    "vout": 0,
+    "address": "RCG8KwJNDVwpUBcdoa6AoHqHVJsA1uMYMR",
+     "amount": 0.01
+}
+response = requests.post(url, json=payload)
+print(response.json())
+```
 - ```/construction/parse``` Parse, verify and sign an unsigned raw transaction.
+```sh
+# Call the endpoint with curl:
+curl -X POST -H "Content-Type: application/json" -d '{"unsigned_hex": "f1a35d8b4926c5e6d9a817abe4c3f9027d6f4a6c8e971b26e5cf61d207c3e91a"}' http://127.0.0.1:5600/construction/parse
+```
+```py
+# Make a request using python:
+import requests
+
+url = "http://127.0.0.1:5600/construction/parse"
+payload = {
+    "unsigned_hex": "f1a35d8b4926c5e6d9a817abe4c3f9027d6f4a6c8e971b26e5cf61d207c3e91a"
+}
+response = requests.post(url, json=payload)
+print(response.json())
+```
 - ```/construction/submit``` Broadcast the signed transaction into the network.
+```sh
+# Call the endpoint with curl:
+curl -X POST -H "Content-Type: application/json" -d '{"signed_hex": "a2bf8e074d6cf013ec012cfe2d2f37f68972165cc0a5ed13f4a5a7b234ef87b2"}' http://127.0.0.1:5600/construction/submit
+```
+```py
+# Make a request using python:
+import requests
+
+url = "http://127.0.0.1:5600/construction/submit"
+payload = {
+    "signed_hex": "a2bf8e074d6cf013ec012cfe2d2f37f68972165cc0a5ed13f4a5a7b234ef87b2"
+}
+response = requests.post(url, json=payload)
+print(response.json())
+```
 
 ## Information
 
