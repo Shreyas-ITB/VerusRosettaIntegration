@@ -51,8 +51,18 @@ then run the docker builds \
 
 - ```/network/status``` Retrieve the current status of the network.
 ```
-
+# Call the endpoint with curl:
+curl -X POST http://127.0.0.1:5500/network/status
 ```
+```py
+# Make a request using python:
+import requests
+
+url = "http://127.0.0.1:5500/network/status"
+response = requests.post(url)
+print(response.json())
+```
+
 - ```/network/options``` Get the options of the network, including versions and supported features.
 - ```/network/rosetta/version``` Retrieve the Rosetta API version information.
 - ```/block``` Get information about a specific block.
