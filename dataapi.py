@@ -4,18 +4,26 @@
 
 
 # Module imports.
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request
 import os
 import requests
 from dotenv import load_dotenv, find_dotenv
-
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+import gevent.pywsgi
 
 # Initializing Flask module and getting the env variable values.
 app = Flask(__name__)
 load_dotenv(find_dotenv())
 RPCURL = os.environ.get("RPCURL")
 PORT = os.environ.get("DATAPIPORT")
-
+RUN_PRODUCTION = os.environ.get("RUN_PRODUCTION")
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+)
 
 # Function definitions.
 
@@ -268,6 +276,7 @@ def get_address_utxos(address):
     
 # Endpoint that is used to get the network status.
 @app.route('/network/status', methods=['POST'])
+@limiter.limit("2 per 5 minutes", override_defaults=False)
 def network_status():
     status_data = get_network_status()
 
@@ -283,6 +292,7 @@ def network_status():
 
 # Endpoint that is used to get network options.
 @app.route('/network/options', methods=['POST'])
+@limiter.limit("2 per 5 minutes", override_defaults=False)
 def network_options():
     # Fetch network options from your API
     options_data = get_network_options()
@@ -299,6 +309,7 @@ def network_options():
 
 # Endpoint that is used to get the version information.
 @app.route('/network/rosetta/version', methods=['POST'])
+@limiter.limit("2 per 5 minutes", override_defaults=False)
 def network_rosetta_version():
     # Fetch network version from your API
     version_data = get_network_version()
@@ -317,6 +328,7 @@ def network_rosetta_version():
 
 # Endpoint that is used to get the information of a block.
 @app.route('/block', methods=['POST'])
+@limiter.limit("2 per 5 minutes", override_defaults=False)
 def block_info():
     data = request.get_json()
     if not data:
@@ -341,6 +353,7 @@ def block_info():
 
 # Endpoint that is used to get the information about a block transaction.
 @app.route('/block/transaction', methods=['POST'])
+@limiter.limit("2 per 5 minutes", override_defaults=False)
 def block_transaction_info():
     data = request.get_json()
     if not data:
@@ -365,6 +378,7 @@ def block_transaction_info():
 
 # Endpoint that is used to fetch mempool transactions.
 @app.route('/mempool', methods=['POST'])
+@limiter.limit("2 per 5 minutes", override_defaults=False)
 def mempool_info():
     mempool_data = get_mempool_info()
     if mempool_data:
@@ -379,6 +393,7 @@ def mempool_info():
 
 # Endpoint that is used to fetch an account's balance.
 @app.route('/account/balance', methods=['POST'])
+@limiter.limit("2 per 5 minutes", override_defaults=False)
 def account_balance():
     data = request.get_json()
     if not data:
@@ -403,6 +418,7 @@ def account_balance():
 
 # Endpoint that is used to fetch the unspend amount of coins/transaction in an account.
 @app.route('/account/coins', methods=['POST'])
+@limiter.limit("2 per 5 minutes", override_defaults=False)
 def account_coins():
     data = request.get_json()
     if not data:
@@ -428,4 +444,11 @@ def account_coins():
 if __name__ == '__main__':
     # Only use the debug=True in development environment.
     # Use WSGI to run the API in production environment.
-    app.run(host='0.0.0.0', port=PORT, debug=True)
+    if RUN_PRODUCTION == "False":
+        app.run(host='0.0.0.0', port=PORT, debug=True)
+    elif RUN_PRODUCTION == "True":
+        app_server = gevent.pywsgi.WSGIServer(('0.0.0.0', PORT), app)
+        app_server.serve_forever()
+    else:
+        print("Please set the RUN_PRODUCTION variable as True or False, Running the API in development mode since the variable is not set...")
+        app.run(host='0.0.0.0', port=PORT, debug=True)
