@@ -47,5 +47,25 @@ then run the docker builds \
 
 ## Endpoints
 
+### Data API Endpoints
+
+- ```/network/status``` Retrieve the current status of the network.
+```
+
+```
+- ```/network/options``` Get the options of the network, including versions and supported features.
+- ```/network/rosetta/version``` Retrieve the Rosetta API version information.
+- ```/block``` Get information about a specific block.
+- ```/block/transaction``` Get information about a specific transaction in a block.
+- ```/mempool``` Get information about transactions currently in the mempool.
+- ```/account/balance``` Get the amount of coins that is present in an address.
+- ```/account/coins``` Get the number of unspent transactions present in an address.
+
+### Construction API Endpoints
+
+- ```/construction/payloads``` Create an unsigned raw transaction.
+- ```/construction/parse``` Parse, verify and sign an unsigned raw transaction.
+- ```/construction/submit``` Broadcast the signed transaction into the network.
+
 ## Information
 
