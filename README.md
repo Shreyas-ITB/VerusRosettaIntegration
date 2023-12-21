@@ -46,6 +46,7 @@ then run the docker builds \
 - Docker will automatically install the requirements and setup an environment for you so if you are running the APIs using docker then there is no need to install the dependencies and setting up the python virtual environment in the previous step.
 - Data API will be running on the public IP of the server on port 5500 (default)
 - Construction API will be running on the public IP of the server on port 5600 (default)
+- If you are trying to run the APIs in production mode then i would recommend to pass the IPs of both the APIs into cloudflare protection, that would reduce the risk of getting ddos'ed. There are built in rate limiters into the APIs already but just to keep it more safer cloudflare is necessary.
 
 ## Endpoints
 
