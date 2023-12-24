@@ -25,7 +25,7 @@ RUN_PRODUCTION=False # Change this to True if you are running the APIs in produc
 ```
 Changing the ``RUN_PRODUCTION`` to ``True`` runs the APIs in production mode (this applies for both the data and construction APIs) if its kept ``False`` then it would run in development mode.
 
-You would need an actual Verus RPC URL to run these APIs, due to security reasons and vulnerability issues i wont be putting the URL in the env file.
+You will also have to run the latest version of verus daemon, i would recommend to run the verus daemon, allow it to sync with the blockchain fully and then run the APIs.
 
 Install the dependencies required for the APIs \
 ```pip install -r requirements.txt```
@@ -243,9 +243,7 @@ print(response.json())
 
 ## Information
 - This APIs do not contain all the routes/endpoints that are mentioned in the rosetta docs as verus RPCs does the work with one command. For example in the construction API there is an endpoint mentioned in the docs called ``/construction/preprocess`` we dont need metadata generation to create a transaction, the next endpoint ``/construction/payloads`` does it all.
-- ``/construction/derive`` route/endpoint is not implemented as it may cause vulnerability by exposing private keys, the ``/network/list`` route/endpoint to list all the networks, as verus works on its own single network there is just no need for it.
 - ``/call`` is not there to make arbitrary procedure calls as the RPC has nothing related to it (afaik).
 - ``/construction/hash`` is not needed, the ``/construction/parse`` gives you the hash at the end of its output, we dont need another route to get the hash when your transaction is completed.
-- Keeping all these things in mind, verus is a unique and very capable cryptocurrency and i believe its way more capable and different compared to bitcoin and ethereum currencies.
 - This is a complete python implementation, there is no use of rosetta-sdks which use golang to implement the same routes into other blockchains. Since python is way more reliable, easy and flexible i have used it.
 - Both the python APIs contain commented lines so that anyone who will be contributing to this project can easily understand whats going on in the code.
