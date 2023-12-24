@@ -189,6 +189,19 @@ print(response.json())
 
 ### Construction API Endpoints
 
+- ```/construction/derive``` Create a new wallet address.
+```sh
+# Call the endpoint with curl:
+curl -X POST http://127.0.0.1:5600/construction/derive
+```
+```py
+# Make a request using python:
+import requests
+
+url = "http://127.0.0.1:5600/construction/derive"
+response = requests.post(url)
+print(response.json())
+```
 - ```/construction/payloads``` Create an unsigned raw transaction.
 ```sh
 # Call the endpoint with curl:
