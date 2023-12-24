@@ -33,6 +33,20 @@ def send_request(method, url, headers, data):
     response.raise_for_status()
     return response.json()
 
+# Helps to create a new verus address
+def getnewaddress():
+    # Define the JSON-RPC request payload
+    payload = {
+        "jsonrpc": "1.0",
+        "id": "curltest",
+        "method": "getnewaddress",
+        "params": []
+    }
+
+    # Make the request using the provided function
+    response_json = send_request("POST", RPCURL, {'content-type': 'text/plain;'}, payload)
+    return response_json
+
 
 # Helps to create an unsigned raw transaction, takes in a few arguments to create a transaction.
 def create_unsigned_transaction(txid, vout, address, amount):
@@ -86,6 +100,22 @@ def submit_signed_transaction(signed_hex):
         raise Exception(f"Failed to submit signed transaction: {str(e)}")
 
 # API Endpoints
+
+# Endpoint that is used to get a new verus address.
+@app.route('/construction/derive', methods=['POST'])
+@limiter.limit("2 per 5 minutes", override_defaults=False)
+def network_status():
+    data = getnewaddress()
+
+    if data:
+        return jsonify({"address": data}), 200
+    else:
+        return jsonify({
+            "code": 500,
+            "message": "Failed to create new verus wallet address",
+            "description": "There was an error while fetching the information from the Local RPC"
+        }), 500
+
 
 # Endpoint that is used to create a raw unsigned transaction.
 @app.route('/construction/payloads', methods=['POST'])
