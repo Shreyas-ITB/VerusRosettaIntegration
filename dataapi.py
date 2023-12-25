@@ -16,6 +16,8 @@ import gevent.pywsgi
 app = Flask(__name__)
 load_dotenv(find_dotenv())
 RPCURL = os.environ.get("RPCURL")
+RPCUSER = os.environ.get("RPCUSER")
+RPCPASS = os.environ.get("RPCPASS")
 PORT = os.environ.get("DATAPIPORT")
 RUN_PRODUCTION = os.environ.get("RUN_PRODUCTION")
 limiter = Limiter(
@@ -29,7 +31,7 @@ limiter = Limiter(
 
 # Helps to send the request to the RPC.
 def send_request(method, url, headers, data):
-    response = requests.request(method, url, headers=headers, json=data)
+    response = requests.request(method, url, headers=headers, json=data, auth=(RPCUSER, RPCPASS))
     response.raise_for_status()
     return response.json()
 
