@@ -18,10 +18,12 @@ Create a virtual environment just to make everything safe and easy to use \
 Rename the ``example.env`` into ``.env`` and then edit the following information present in it.
 
 ```
-RPCURL=VERUS RPC URL # Replace this with actual verusd rpc url.
-DATAPIPORT=5500 # This is the default port on which the Data API runs on, edit it as per your needs.
-CONSTAPIPORT=5600 # This is the default port on which the Construction API runs on, edit it as per your needs.
-RUN_PRODUCTION=False # Change this to True if you are running the APIs in production mode.
+RPCURL=http://127.0.0.1:27486/ # The default verus daemon local url. Recommended to leave it alone.
+RPCUSER="" # The RPC Username located in the vrsc.conf file inside the "~/.komodo/VRSC" folder
+RPCPASS="" # The RPC Password located in the vrsc.conf file inside the "~/.komodo/VRSC" folder.
+DATAPIPORT=5500 # Default Data API Port.
+CONSTAPIPORT=5600 # Default Construction API Port.
+RUN_PRODUCTION=False # Run the APIs in production mode.
 ```
 Changing the ``RUN_PRODUCTION`` to ``True`` runs the APIs in production mode (this applies for both the data and construction APIs) if its kept ``False`` then it would run in development mode.
 
