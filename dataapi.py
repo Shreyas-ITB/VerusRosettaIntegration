@@ -442,6 +442,32 @@ def account_coins():
             "description": "There was an error while fetching UTXOs from the API"
         }), 500
 
+@app.route('/call', methods=['POST'])
+def call_rpc():
+    try:
+        data = request.get_json()
+        # Check if the request has the necessary parameters
+        if not data or "method" not in data:
+            return jsonify({"error": "Invalid request. 'method' is a mandatory parameter."}), 400
+
+        # Extract parameters from the request
+        method = data["method"]
+        parameter = data.get("parameter")
+        payload = {
+        "jsonrpc": "1.0",
+        "id": "curltest",
+        "method": method,
+        "params": parameter if parameter else []
+    }
+        # Call the send_request function to make a request to your RPC
+        response = send_request("POST", RPCURL, {'content-type': 'text/plain;'}, payload)
+
+        # Return the response from your RPC
+        return jsonify(response), 200
+
+    except requests.exceptions.RequestException as rpc_error:
+        return jsonify({"error": str(rpc_error)}), 500
+
 # Run the API
 if __name__ == '__main__':
     # Only use the debug=True in development environment.
