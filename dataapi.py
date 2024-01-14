@@ -1,6 +1,6 @@
 # Verus Network Data API
 # Used to provide data for rosetta integration 
-# Coded by Shreyas from the verus community
+# Coded by Shreyas and Shreya S from the verus community
 
 
 # Module imports.
@@ -11,6 +11,7 @@ from dotenv import load_dotenv, find_dotenv
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import gevent.pywsgi
+import uuid
 
 # Initializing Flask module and getting the env variable values.
 app = Flask(__name__)
@@ -154,6 +155,10 @@ def get_network_version():
     except:
         return None
 
+def getcurrentblockindex():
+    payload = {}
+    data = send_request("GET", "https://explorer.verus.io/api/getblockcount", {'content-type': 'text/plain;'}, payload)
+    return data
 
 # Gets the block information, takes in an argument called identifier which should be a transaction ID or a block number.
 def get_block_info(identifier):
@@ -275,15 +280,72 @@ def get_address_utxos(address):
 
 
 # API Endpoints
-    
+
+# Endpoint that is used to get the network lists.
+@app.route('/network/list', methods=['POST'])
+@limiter.limit("2 per 5 minutes", override_defaults=False)
+def network_list():
+    netinfo = {
+  "network_identifiers": [
+    {
+      "blockchain": "verus",
+      "network": "local rpc",
+      "sub_network_identifier": {
+        "network": "local shard",
+        "metadata": None
+      }
+    }
+  ]
+}
+    errnetinfo = {
+  "code": 12,
+  "message": "Infoerror",
+  "description": "error getting the information",
+  "retriable": True,
+  "details": None
+}
+    try:
+        return jsonify(netinfo), 200
+    except:
+        return jsonify(errnetinfo), 500
+
 # Endpoint that is used to get the network status.
 @app.route('/network/status', methods=['POST'])
 @limiter.limit("2 per 5 minutes", override_defaults=False)
 def network_status():
+    data = request.get_json()
     status_data = get_network_status()
+    newdata = getcurrentblockindex()
 
     if status_data:
-        return jsonify({"network_status": status_data}), 200
+        outdata = {
+  "current_block_identifier": {
+    "index": status_data["blocks"],
+    "hash": status_data["bestblockhash"]
+  },
+  "current_block_timestamp": 1582833600000,
+  "genesis_block_identifier": {
+    "index": status_data["blocks"],
+    "hash": status_data["bestblockhash"]
+  },
+  "oldest_block_identifier": {
+    "index": status_data["blocks"],
+    "hash": status_data["bestblockhash"]
+  },
+  "sync_status": {
+    "current_index": newdata,
+    "target_index": newdata,
+    "stage": "header sync",
+    "synced": True
+  },
+  "peers": [
+    {
+      "peer_id": uuid.uuid4(),
+      "metadata": None
+    }
+  ]
+}
+        return jsonify(outdata), 200
     else:
         return jsonify({
             "code": 500,
@@ -313,14 +375,16 @@ def network_options():
 @app.route('/network/rosetta/version', methods=['POST'])
 @limiter.limit("2 per 5 minutes", override_defaults=False)
 def network_rosetta_version():
-    # Fetch network version from your API
-    version_data = get_network_version()
-
-    if version_data:
-        # Add the specified text to the output
-        version_data["message"] = f"Verus Rosetta Coinbase blockchain integration DataAPI running on port {PORT}, all the information here is fetched from the Verus RPC servers."
-        return jsonify({"network_version": version_data}), 200
-    else:
+    try:
+    # Add the specified text to the output
+        versioninfo = {
+    "rosetta_version": "1.2.5",
+    "node_version": "1.0.2",
+    "middleware_version": "0.2.7",
+    "metadata": {}
+    }
+        return jsonify(versioninfo), 200
+    except:
         return jsonify({
             "code": 500,
             "message": "Failed to fetch network version",
