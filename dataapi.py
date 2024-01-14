@@ -360,14 +360,59 @@ def network_status():
 def network_options():
     # Fetch network options from your API
     options_data = get_network_options()
-
-    if options_data:
-        return jsonify({"network_options": options_data}), 200
-    else:
+    try:
+    # Add the specified text to the output
+        versioninfo = {
+    "version": {
+    "rosetta_version": "1.2.5",
+    "node_version": "1.0.2",
+    "middleware_version": "0.2.7",
+    "metadata": None
+  },
+    "allow": {
+    "operation_statuses": [
+      {
+        "status": "string",
+        "successful": "boolean"
+      }
+    ],
+    "operation_types": [
+      "string"
+    ],
+    "errors": [
+      {
+        "code": 12,
+        "message": "Invalid account format",
+        "description": "This error is returned when the requested AccountIdentifier is improperly formatted.",
+        "retriable": "boolean",
+        "details": None
+      }
+    ],
+    "historical_balance_lookup": "boolean",
+    "timestamp_start_index": "integer",
+    "call_methods": [
+      "string"
+    ],
+    "balance_exemptions": [
+      {
+        "sub_account_address": "staking",
+        "currency": {
+          "symbol": "BTC",
+          "decimals": 8,
+          "metadata": None
+        },
+        "exemption_type": "string"
+      }
+    ],
+    "mempool_coins": "boolean"
+  }
+}
+        return jsonify({"version": versioninfo}), 200
+    except:
         return jsonify({
             "code": 500,
-            "message": "Failed to fetch network options",
-            "description": "There was an error while fetching network options from the RPC"
+            "message": "Failed to fetch network version",
+            "description": "There was an error while fetching network version from the RPC"
         }), 500
 
 
