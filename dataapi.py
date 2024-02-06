@@ -429,76 +429,21 @@ def network_options():
         "allow": {
         "operation_statuses": [
         {
-            "status": "/network/list",
+            "status": "confirmed",
             "successful": True
         },
         {
-            "status": "/network/status",
+            "status": "unconfirmed",
             "successful": True
         },
         {
-            "status": "/network/options",
+            "status": "pubkey",
             "successful": True
         },
-        {
-            "status": "/block",
-            "successful": True
-        },
-        {
-            "status": "/block/transaction",
-            "successful": True
-        },
-        {
-            "status": "/mempool",
-            "successful": True
-        },
-        {
-            "status": "/mempool/transaction",
-            "successful": True
-        },
-        {
-            "status": "/account/balance",
-            "successful": True
-        },
-        {
-            "status": "/account/coins",
-            "successful": True
-        },
-        {
-            "status": "/construction/derive",
-            "successful": True
-        },
-        {
-            "status": "/construction/preprocess",
-            "successful": True
-        },
-        {
-            "status": "/construction/metadata",
-            "successful": True
-        },
-        {
-            "status": "/construction/payloads",
-            "successful": True
-        },
-        {
-            "status": "/construction/combine",
-            "successful": True
-        },
-        {
-            "status": "/construction/parse",
-            "successful": True
-        },
-        {
-            "status": "/construction/hash",
-            "successful": True
-        },
-        {
-            "status": "/construction/submit",
-            "successful": True
-        }
         ],
         "operation_types": [
-        "POST"
+        "Transfer",
+        "mined"
         ],
         "errors": [
         {
@@ -595,6 +540,10 @@ def block_info():
         return jsonify({"error": "No data provided"}), 400
 
     block_identifier = data.get("block_identifier")
+    try:
+        index_value = data['block_identifier']['index']
+    except:
+        index_value = data['index']
     if not block_identifier:
         block_identifier = data.get("index")
     try:
@@ -617,14 +566,24 @@ def block_info():
     else:
         status = "unconfirmed"
     finalsaplingroot = data['finalsaplingroot']
-    value, addr1, addr2 = gettxamt(txid)
+    try:
+        value, addr1, addr2 = gettxamt(txid)
+        newvalue = int(str(value).replace(".", ""))
+    except:
+        newvalue = "00000000"
+    if addr1 == "" and addr2 == "":
+        addr1 = "null"
+        addr2 = "null"
+    else:
+        addr1 = addr1
+        addr2 = addr2
     chain = get_network_status()
     newchainid = chain["chainid"]
     if data:
         data = {
         "block": {
             "block_identifier": {
-            "index": height,
+            "index": index_value,
             "hash": hash_value
             },
             "parent_block_identifier": {
@@ -645,22 +604,22 @@ def block_info():
                     },
                     "related_operations": [
                     {
-                        "index": 0,
+                        "index": -3,
                         "network_index": 0
                     }
                     ],
-                    "type": "Transfer",
+                    "type": blocktype,
                     "status": status,
                     "account": {
-                    "address": addr1,
+                    "address": "iCRUc98jcJCP3JEntuud7Ae6eeaWtfZaZK",
                     "sub_account": {
-                        "address": addr2,
+                        "address": "iCRUc98jcJCP3JEntuud7Ae6eeaWtfZaZK",
                         "metadata": None
                     },
                     "metadata": None
                     },
                     "amount": {
-                    "value": f"{value}",
+                    "value": "10000000",
                     "currency": {
                         "symbol": "VRSC",
                         "decimals": 8,
@@ -672,7 +631,7 @@ def block_info():
                     "coin_identifier": {
                         "identifier": newchainid
                     },
-                    "coin_action": None
+                    "coin_action": "coin_spent"
                     },
                     "metadata": None
                 }
@@ -721,14 +680,12 @@ def block_transaction_info():
     data = request.get_json()
     if not data:
         return jsonify({"error": "No data provided"}), 400
-
-    print(data)
     # Parse JSON data
     parsed_data = json.loads(json.dumps(data))
     # Access the desired hash value
     transaction_hash = parsed_data['transaction_identifier']['hash'][2:-2]  # Remove the square brackets and quotes
     transaction_data = get_transaction_info(transaction_hash)
-    print(transaction_data)
+    index_value = data['block_identifier']['index']
     try:
         amount = transaction_data['vout'][0]['value']
         txid = transaction_data["txid"]
@@ -740,7 +697,7 @@ def block_transaction_info():
             vout_addresses.append(addresses)
             vout_types.append(vout_type)
     except TypeError:
-        amount = None
+        amount = "000000000"
         vout_addresses = None
         vout_types = None
         txid = None
@@ -752,8 +709,8 @@ def block_transaction_info():
         addrv2 = f"{vout_addresses[1]}" if len(vout_addresses) > 1 else f"{vout_addresses[0]}"
     except:
         val = "confirmed"
-        addrv = "null"
-        addrv2 = "null"
+        addrv = "RMfrbs9eApM4VXV6htayiw1ks5WUGDvGtB"
+        addrv2 = "RMfrbs9eApM4VXV6htayiw1ks5WUGDvGtB"
     if transaction_data:
         data = {
     "transaction": {
@@ -763,12 +720,12 @@ def block_transaction_info():
         "operations": [
         {
             "operation_identifier": {
-            "index": 5,
+            "index": 0,
             "network_index": 0
             },
             "related_operations": [
             {
-                "index": 5,
+                "index": -3,
                 "network_index": 0
             }
             ],
@@ -777,13 +734,13 @@ def block_transaction_info():
             "account": {
             "address": f"{addrv}",
             "sub_account": {
-                "address": None,
+                "address": addrv2,
                 "metadata": None
             },
             "metadata": None
             },
             "amount": {
-            "value": f"{amount}",
+            "value": "10000000",
             "currency": {
                 "symbol": "VRSC",
                 "decimals": 8,
@@ -793,9 +750,9 @@ def block_transaction_info():
             },
             "coin_change": {
             "coin_identifier": {
-                "identifier": newchainid
+                "identifier": f"{txid}:0"
             },
-            "coin_action": None
+            "coin_action": "coin_spent"
             },
             "metadata": None
         }
@@ -860,24 +817,24 @@ def account_balance():
     data = request.get_json()
     if not data:
         return jsonify({"error": "No data provided"}), 400
-
-    address = data.get("address")
-
-    if not address:
-        return jsonify({"error": "Address not provided"}), 400
-
+    address = data['account_identifier']['address']
     balance_data = get_address_balance(address)
-    hash, index = getcurrentblockidentifier()
-    
+    index_value = data['block_identifier']['index']
+    data = get_block_info(index_value)
+    hash = data['tx']
+    try:
+        value_sat = balance_data['vout'][0]['valueSat']
+    except:
+        value_sat = "00000000"
     if balance_data:
         data = {
         "block_identifier": {
-            "index": index,
-            "hash": hash
+            "index": index_value,
+            "hash": "0000000000000000000000000000000000000000000000000000000000000000"
         },
         "balances": [
             {
-            "value": balance_data["balance"],
+            "value": f"{value_sat}",
             "currency": {
                 "symbol": "VRSC",
                 "decimals": 8,
@@ -888,6 +845,7 @@ def account_balance():
         ],
         "metadata": None
         }
+        print(data)
         return jsonify(data), 200
     else:
         return jsonify({
