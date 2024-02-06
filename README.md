@@ -139,30 +139,174 @@ url = "http://127.0.0.1:5500/network/options"
 response = requests.post(url)
 print(response.json())
 ```
-
-- ```/network/rosetta/version``` Retrieve the Rosetta API version information.
-```sh
-# Call the endpoint with curl:
-curl -X POST http://127.0.0.1:5500/network/rosetta/version
-```
-```py
-# Make a request using python:
-import requests
-
-url = "http://127.0.0.1:5500/network/rosetta/version"
-response = requests.post(url)
-print(response.json())
+Expected endpoint behaviour
+```json
+{
+	"allow": {
+		"balance_exemptions": [
+			{
+				"currency": {
+					"decimals": 8,
+					"metadata": null,
+					"symbol": "VRSC"
+				},
+				"exemption_type": "dynamic",
+				"sub_account_address": "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV"
+			}
+		],
+		"call_methods": [
+			"POST"
+		],
+		"errors": [
+			{
+				"code": 12,
+				"description": "This error is returned when the requested AccountIdentifier is improperly formatted.",
+				"details": null,
+				"message": "Invalid account format",
+				"retriable": true
+			},
+			{
+				"code": 500,
+				"description": "There was an error while fetching network version from the RPC",
+				"details": null,
+				"message": "Failed to fetch network version",
+				"retriable": true
+			},
+			{
+				"code": 500,
+				"description": "There was an error while fetching block information from the RPC",
+				"details": null,
+				"message": "Failed to fetch block information",
+				"retriable": true
+			},
+			{
+				"code": 500,
+				"description": "There was an error while fetching transaction information from the RPC",
+				"details": null,
+				"message": "Failed to fetch transaction information",
+				"retriable": true
+			},
+			{
+				"code": 500,
+				"description": "There was an error while fetching mempool information from the RPC",
+				"details": null,
+				"message": "Failed to fetch mempool information",
+				"retriable": true
+			},
+			{
+				"code": 500,
+				"description": "There was an error while fetching balance information from the API",
+				"details": null,
+				"message": "Failed to fetch balance information",
+				"retriable": true
+			},
+			{
+				"code": 500,
+				"description": "There was an error while fetching UTXOs from the API",
+				"details": null,
+				"message": "Failed to fetch UTXOs",
+				"retriable": true
+			},
+			{
+				"code": 500,
+				"description": "There was an error while fetching the information from the Local RPC",
+				"details": null,
+				"message": "Failed to create new verus wallet address",
+				"retriable": true
+			}
+		],
+		"historical_balance_lookup": true,
+		"mempool_coins": false,
+		"operation_statuses": [
+			{
+				"status": "/network/list",
+				"successful": true
+			},
+			{
+				"status": "/network/status",
+				"successful": true
+			},
+			{
+				"status": "/network/options",
+				"successful": true
+			},
+			{
+				"status": "/block",
+				"successful": true
+			},
+			{
+				"status": "/block/transaction",
+				"successful": true
+			},
+			{
+				"status": "/mempool",
+				"successful": true
+			},
+			{
+				"status": "/mempool/transaction",
+				"successful": true
+			},
+			{
+				"status": "/account/balance",
+				"successful": true
+			},
+			{
+				"status": "/account/coins",
+				"successful": true
+			},
+			{
+				"status": "/construction/derive",
+				"successful": true
+			},
+			{
+				"status": "/construction/preprocess",
+				"successful": true
+			},
+			{
+				"status": "/construction/metadata",
+				"successful": true
+			},
+			{
+				"status": "/construction/payloads",
+				"successful": true
+			},
+			{
+				"status": "/construction/combine",
+				"successful": true
+			},
+			{
+				"status": "/construction/parse",
+				"successful": true
+			},
+			{
+				"status": "/construction/hash",
+				"successful": true
+			},
+			{
+				"status": "/construction/submit",
+				"successful": true
+			}
+		],
+		"operation_types": [
+			"POST"
+		],
+		"timestamp_start_index": 1231006505
+	},
+	"version": {
+		"metadata": null,
+		"middleware_version": "0.2.7",
+		"node_version": "2000753",
+		"rosetta_version": "1.2.5"
+	}
+}
 ```
 
 - ```/block``` Get information about a specific block.
 ```sh
 # Call the endpoint with curl:
 
-# Fetch using a hash as an argument
-curl -X POST -H "Content-Type: application/json" -d '{"block_identifier": "0x1f2cc6c5027d2f201a5453ad1119574d2aed23a392654742ac3c78783c071f85"}' http://127.0.0.1:5500/block
-
 # Fetch using a block height as an argument
-curl -X POST -H "Content-Type: application/json" -d '{"block_identifier": "12800"}' http://127.0.0.1:5500/block
+curl -X POST -H "Content-Type: application/json" -d '{"block_identifier": 2909100}' http://127.0.0.1:5500/block
 ```
 ```py
 # Make a request using python:
@@ -170,25 +314,104 @@ import requests
 
 url = "http://127.0.0.1:5500/block"
 
-# Fetch using a hash as an argument
-payload = {
-    "block_identifier": "0x1f2cc6c5027d2f201a5453ad1119574d2aed23a392654742ac3c78783c071f85"
-}
-response = requests.post(url, json=payload)
-print(response.json())
-
 # Fetch using a block height as an argument
 payload = {
-    "block_identifier": "12800"
+    "block_identifier": 2909100
 }
 response = requests.post(url, json=payload)
 print(response.json())
+```
+Expected endpoint behaviour
+```json
+{
+	"block": {
+		"block_identifier": {
+			"hash": 2909100,
+			"index": "000000000001764d6ac1e1a56a546fec795bdac6948867911c18bd7579213e2d"
+		},
+		"metadata": null,
+		"parent_block_identifier": {
+			"hash": "31f2b3b007eafbd3ef2756b7077a2d18d8372d727ce9392ede016a7f309986fb",
+			"index": 1123941
+		},
+		"timestamp": 1707138632,
+		"transactions": [
+			{
+				"metadata": null,
+				"operations": [
+					{
+						"account": {
+							"address": "iHbTMYB43xqqFVmEqJkqff6GrZDQoaiq6g",
+							"metadata": null,
+							"sub_account": {
+								"address": "RQ55dLQ7uGnLx8scXfkaFV6QS6qVBGyxAG",
+								"metadata": null
+							}
+						},
+						"amount": {
+							"currency": {
+								"decimals": 8,
+								"metadata": null,
+								"symbol": "VRSC"
+							},
+							"metadata": null,
+							"value": 601136018
+						},
+						"coin_change": {
+							"coin_action": null,
+							"coin_identifier": {
+								"identifier": "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV"
+							}
+						},
+						"metadata": null,
+						"operation_identifier": {
+							"index": 5,
+							"network_index": 0
+						},
+						"related_operations": [
+							{
+								"index": 5,
+								"network_index": 0
+							}
+						],
+						"status": "confirmed",
+						"type": "mined"
+					}
+				],
+				"related_transactions": [
+					{
+						"direction": "forward",
+						"network_identifier": {
+							"blockchain": "VRSC",
+							"network": "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV",
+							"sub_network_identifier": {
+								"metadata": null,
+								"network": "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV"
+							}
+						},
+						"transaction_identifier": {
+							"hash": "4e55048d2a21805b011985aaef43665c640af0da8b0927c1d57c4b34f67e96b9"
+						}
+					}
+				],
+				"transaction_identifier": {
+					"hash": "4e55048d2a21805b011985aaef43665c640af0da8b0927c1d57c4b34f67e96b9"
+				}
+			}
+		]
+	},
+	"other_transactions": [
+		{
+			"hash": "4e55048d2a21805b011985aaef43665c640af0da8b0927c1d57c4b34f67e96b9"
+		}
+	]
+}
 ```
 
 - ```/block/transaction``` Get information about a specific transaction in a block.
 ```sh
 # Call the endpoint with curl:
-curl -X POST -H "Content-Type: application/json" -d '{"transaction_id": "0x2f23fd8cca835af21f3ac375bac601f97ead75f2e79143bdf71fe2c4be043e8f"}' http://127.0.0.1:5500/block/transaction
+curl -X POST -H "Content-Type: application/json" -d '{"transaction_id": "4e55048d2a21805b011985aaef43665c640af0da8b0927c1d57c4b34f67e96b9"}' http://127.0.0.1:5500/block/transaction
 ```
 ```py
 # Make a request using python:
@@ -196,11 +419,83 @@ import requests
 
 url = "http://127.0.0.1:5500/block/transaction"
 payload = {
-    "transaction_id": "0x2f23fd8cca835af21f3ac375bac601f97ead75f2e79143bdf71fe2c4be043e8f"
+    "transaction_id": "4e55048d2a21805b011985aaef43665c640af0da8b0927c1d57c4b34f67e96b9"
 }
 response = requests.post(url, json=payload)
 print(response.json())
 ```
+Expected endpoint behaviour
+```json
+{
+	"transaction": {
+		"metadata": null,
+		"operations": [
+			{
+				"account": {
+					"address": [
+						"iHbTMYB43xqqFVmEqJkqff6GrZDQoaiq6g"
+					],
+					"metadata": null,
+					"sub_account": {
+						"address": [
+							"RQ55dLQ7uGnLx8scXfkaFV6QS6qVBGyxAG"
+						],
+						"metadata": null
+					}
+				},
+				"amount": {
+					"currency": {
+						"decimals": 8,
+						"metadata": null,
+						"symbol": "VRSC"
+					},
+					"metadata": null,
+					"value": 6.01136018
+				},
+				"coin_change": {
+					"coin_action": null,
+					"coin_identifier": {
+						"identifier": "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV"
+					}
+				},
+				"metadata": null,
+				"operation_identifier": {
+					"index": 5,
+					"network_index": 0
+				},
+				"related_operations": [
+					{
+						"index": 5,
+						"network_index": 0
+					}
+				],
+				"status": "cryptocondition",
+				"type": "Transfer"
+			}
+		],
+		"related_transactions": [
+			{
+				"direction": "forward",
+				"network_identifier": {
+					"blockchain": "VRSC",
+					"network": "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV",
+					"sub_network_identifier": {
+						"metadata": null,
+						"network": "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV"
+					}
+				},
+				"transaction_identifier": {
+					"hash": "4e55048d2a21805b011985aaef43665c640af0da8b0927c1d57c4b34f67e96b9"
+				}
+			}
+		],
+		"transaction_identifier": {
+			"hash": "4e55048d2a21805b011985aaef43665c640af0da8b0927c1d57c4b34f67e96b9"
+		}
+	}
+}
+```
+
 - ```/mempool``` Get information about transactions currently in the mempool.
 ```sh
 # Call the endpoint with curl:
@@ -214,6 +509,32 @@ url = "http://127.0.0.1:5500/mempool"
 response = requests.post(url)
 print(response.json())
 ```
+Expected endpoint behaviour
+```json
+{
+	"transaction_identifiers": [
+		{
+			"hash": [
+				"3cb19b6eba6c12ee5281d88725c791b7e7d79e72282e48426398646651670a10",
+				"f9cd43b934cc3b2a44e219c025a6556564e09e2f248fb6810fdd6f4dddc25337",
+				"902dc1ccc22734f06feb0f3dd4005e43b9f281e54fc66676d719be0268c3224b",
+				"7c115584b323c2225e388f921f47bacf0373ba509b81d8f43ca3d86f7c4ab35f",
+				"8530cb38f72efb72ad0025c33643c65d06661db5655b3ac361939ada802def6a",
+				"9424fbcfd9fa395ec3b3ecd7e57f712d6b399ce122aa6ef924d7679b5258f978",
+				"5623e869269e16c7c579b5f86ef5961919ddeda733718953c036c292fa714483",
+				"5cf73ca8cd48688b37a254f2bfc616fda38ebd2a525f58ec1433c389f626b794",
+				"bb6f96379cf350b3b70d8af85574f1e2a00bda0aff4579aac47b637b3beb82a3",
+				"e9d125756fa33c817e17377d400174aba15b4c5489a9493037e6c815ba9ac4c4",
+				"89b60273f8292490a8d4b4d426abe04f980b9155c53b88741b627de5556e0cc5",
+				"b5b509b5e245c5a9ac921fa26f562b616b177f8b235fba9832967c02c447f8c5",
+				"d29bbdde1896392457f76ca7585336b01a90336e54f66c1c4bb6476f61a4bde0",
+				"b6b87ed4703035782a6087130acb7629b414a58207b9f18457f2dc1fa91954f7"
+			]
+		}
+	]
+}
+```
+
 - ```/account/balance``` Get the amount of coins that is present in an address.
 ```sh
 # Call the endpoint with curl:
@@ -230,6 +551,28 @@ payload = {
 response = requests.post(url, json=payload)
 print(response.json())
 ```
+Expected endpoint behaviour
+```json
+{
+	"balances": [
+		{
+			"currency": {
+				"decimals": 8,
+				"metadata": null,
+				"symbol": "VRSC"
+			},
+			"metadata": null,
+			"value": 9341279
+		}
+	],
+	"block_identifier": {
+		"hash": "000000000002f0bb840520805a618ae024801e4c3c66422a87a82253ca65afdd",
+		"index": 2910001
+	},
+	"metadata": null
+}
+```
+
 - ```/account/coins``` Get the number of unspent transactions present in an address.
 ```sh
 # Call the endpoint with curl:
@@ -245,6 +588,53 @@ payload = {
 }
 response = requests.post(url, json=payload)
 print(response.json())
+```
+Expected endpoint behaviour
+```json
+{
+	"block_identifier": {
+		"hash": [
+			"f5b45f2d1e62b1cc6c8468e4a76e932137e9775f8bebb30a8d60f7db29d043bc",
+			"a28e79b0c82ab2277c4ea407d976707c8cf635624ccf128e0f3bfd32fbe41b0e",
+			"28d07ce4d33175b3f6e8a85630a80c61e45333f05ac1bbb6632c4a9f8ab990e0",
+			"2109b693bda7e1ea9b075a9ce67971b4a109c27aefc2050cafd9ddf8de2f5c21",
+			"2961d462b26e96aacf233adec5a6ab8aede7253384fb79f080a6101ef04e461b",
+			"1e8b411ab92e61889ec2ac58e2a43cd25c4ffec1f6e9e63b5aed652de2f6a425"
+		],
+		"index": [
+			2880850,
+			2882034,
+			2883202,
+			2884359,
+			2885535,
+			2886700
+		]
+	},
+	"coins": [
+		{
+			"amount": {
+				"currency": {
+					"decimals": 8,
+					"metadata": null,
+					"symbol": "VRSC"
+				},
+				"metadata": null,
+				"value": [
+					1316651,
+					3326932,
+					1361294,
+					1221210,
+					1333377,
+					781815
+				]
+			},
+			"coin_identifier": {
+				"identifier": "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV"
+			}
+		}
+	],
+	"metadata": null
+}
 ```
 
 ### Construction API Endpoints
