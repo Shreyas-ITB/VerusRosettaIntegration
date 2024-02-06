@@ -11,7 +11,7 @@ from dotenv import load_dotenv, find_dotenv
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import gevent.pywsgi
-import uuid
+import uuid, json
 
 # Initializing Flask module and getting the env variable values.
 app = Flask(__name__)
@@ -138,27 +138,62 @@ def get_network_status():
         # Handle the error case
         return None
 
-
-# Fetches the network versions from the RPC.
-def get_network_version():
-    try:
-        blockchain_info = get_network_options()
-        network_version = {
-        "rosetta_version": "1.2.5",
-        "node_version": blockchain_info["version"],
-        "sub_version": blockchain_info["subversion"],
-        "protocol_version": blockchain_info["protocolversion"],
-        "middleware_version": "0.2.7",
-        "metadata": None
+def getcurrentblockidentifier():
+    payload = {
+        "jsonrpc": "1.0",
+        "id": "curltest",
+        "method": "getbestblockhash",
+        "params": []
     }
-        return network_version
-    except:
-        return None
 
-def getcurrentblockindex():
+    # Make the request using the provided function
+    response_json = send_request("POST", RPCURL, {'content-type': 'text/plain;'}, payload)
+    req = requests.get(f"https://explorer.verus.io/api/getblock?hash={response_json['result']}")
+    resp = req.json()['height']
+    return response_json['result'], resp
+
+def getgenesisblockidentifier():
+    payload = {
+        "jsonrpc": "1.0",
+        "id": "curltest",
+        "method": "getblockhash",
+        "params": [0]
+    }
+
+    # Make the request using the provided function
+    response_json = send_request("POST", RPCURL, {'content-type': 'text/plain;'}, payload)
+    req = requests.get(f"https://explorer.verus.io/api/getblock?hash={response_json['result']}")
+    resp = req.json()['height']
+    return response_json['result'], resp
+
+def getcurrentblockheight():
     payload = {}
     data = send_request("GET", "https://explorer.verus.io/api/getblockcount", {'content-type': 'text/plain;'}, payload)
     return data
+
+def getsyncstatus():
+    hash0, height0 = getcurrentblockidentifier()
+    height = getcurrentblockheight()
+    calc = int(height) / int(height0)
+    if calc == 1:
+        syncstat = "Synced"
+        boolean = True
+    else:
+        syncstat = "Out of sync, Syncing.."
+        boolean = False
+    return syncstat, height0, height, boolean
+
+def getblocktimestamp():
+    payload = {
+        "jsonrpc": "1.0",
+        "id": "curltest",
+        "method": "getinfo",
+        "params": []
+    }
+
+    # Make the request using the provided function
+    response_json = send_request("POST", RPCURL, {'content-type': 'text/plain;'}, payload)
+    return response_json['result']["tiptime"]
 
 # Gets the block information, takes in an argument called identifier which should be a transaction ID or a block number.
 def get_block_info(identifier):
@@ -167,7 +202,7 @@ def get_block_info(identifier):
         "jsonrpc": "1.0",
         "id": "curltest",
         "method": "getblock",
-        "params": [f"{identifier}"]
+        "params": [identifier]
     }
 
     # Make the request using the provided function
@@ -230,6 +265,12 @@ def get_mempool_info():
         # Handle the error case
         return None
 
+def gettxamt(txid):
+    resp = requests.get(f"https://explorer.verus.io/ext/gettx/{txid}")
+    amount = resp.json()['tx']['vin'][0]['amount']
+    addr1 = resp.json()['tx']['vout'][0]['addresses']
+    addr2 = resp.json()['tx']['vout'][1]['addresses']
+    return amount, addr1, addr2
 
 # Gets the balance of an address, takes in an argument called address.
 def get_address_balance(address):
@@ -285,23 +326,27 @@ def get_address_utxos(address):
 @app.route('/network/list', methods=['POST'])
 @limiter.limit("2 per 5 minutes", override_defaults=False)
 def network_list():
+    chain = get_network_status()
+    newchainid = chain["chainid"]
     netinfo = {
-  "network_identifiers": [
-    {
-      "blockchain": "verus",
-      "network": "local rpc",
-      "sub_network_identifier": {
-        "network": "local shard",
-        "metadata": None
+  "network_identifiers":
+  [
+      {
+          "blockchain":"VRSC",
+          "network": newchainid,
+          "sub_network_identifier":
+          {
+              "network": newchainid
+          }
       }
-    }
+              
   ]
-}
+              }
     errnetinfo = {
   "code": 12,
-  "message": "Infoerror",
-  "description": "error getting the information",
-  "retriable": True,
+  "message": "Invalid account format",
+  "description": "This error is returned when the requested AccountIdentifier is improperly formatted.",
+  "retriable": "boolean",
   "details": None
 }
     try:
@@ -314,100 +359,39 @@ def network_list():
 @limiter.limit("2 per 5 minutes", override_defaults=False)
 def network_status():
     data = request.get_json()
-    status_data = get_network_status()
-    newdata = getcurrentblockindex()
-
-    if status_data:
-        outdata = {
-  "current_block_identifier": {
-    "index": status_data["blocks"],
-    "hash": status_data["bestblockhash"]
-  },
-  "current_block_timestamp": 1582833600000,
-  "genesis_block_identifier": {
-    "index": status_data["blocks"],
-    "hash": status_data["bestblockhash"]
-  },
-  "oldest_block_identifier": {
-    "index": status_data["blocks"],
-    "hash": status_data["bestblockhash"]
-  },
-  "sync_status": {
-    "current_index": newdata,
-    "target_index": newdata,
-    "stage": "header sync",
-    "synced": True
-  },
-  "peers": [
-    {
-      "peer_id": uuid.uuid4(),
-      "metadata": None
-    }
-  ]
-}
-        return jsonify(outdata), 200
-    else:
-        return jsonify({
-            "code": 500,
-            "message": "Failed to fetch network status",
-            "description": "There was an error while fetching network status from the RPC"
-        }), 500
-
-
-# Endpoint that is used to get network options.
-@app.route('/network/options', methods=['POST'])
-@limiter.limit("2 per 5 minutes", override_defaults=False)
-def network_options():
-    # Fetch network options from your API
-    options_data = get_network_options()
     try:
-    # Add the specified text to the output
-        versioninfo = {
-    "version": {
-    "rosetta_version": "1.2.5",
-    "node_version": "1.0.2",
-    "middleware_version": "0.2.7",
-    "metadata": None
-  },
-    "allow": {
-    "operation_statuses": [
-      {
-        "status": "string",
-        "successful": "boolean"
-      }
-    ],
-    "operation_types": [
-      "string"
-    ],
-    "errors": [
-      {
-        "code": 12,
-        "message": "Invalid account format",
-        "description": "This error is returned when the requested AccountIdentifier is improperly formatted.",
-        "retriable": "boolean",
-        "details": None
-      }
-    ],
-    "historical_balance_lookup": "boolean",
-    "timestamp_start_index": "integer",
-    "call_methods": [
-      "string"
-    ],
-    "balance_exemptions": [
-      {
-        "sub_account_address": "staking",
-        "currency": {
-          "symbol": "BTC",
-          "decimals": 8,
-          "metadata": None
+        hash, index = getcurrentblockidentifier()
+        ghash, gindex = getgenesisblockidentifier()
+        syncstat, height0, height, boolean = getsyncstatus()
+        timestamp = getblocktimestamp()
+        info = {
+        "current_block_identifier": {
+            "index": index,
+            "hash": hash
         },
-        "exemption_type": "string"
-      }
-    ],
-    "mempool_coins": "boolean"
-  }
-}
-        return jsonify({"version": versioninfo}), 200
+        "current_block_timestamp": timestamp,
+        "genesis_block_identifier": {
+            "index": gindex,
+            "hash": ghash
+        },
+        "oldest_block_identifier": {
+            "index": gindex,
+            "hash": ghash
+        },
+        "sync_status": {
+            "current_index": height,
+            "target_index": height0,
+            "stage": syncstat,
+            "synced": boolean
+        },
+        "peers": [
+            {
+            "peer_id": uuid.uuid4(),
+            "metadata": None
+            }
+        ]
+        }
+        return info, 200
     except:
         return jsonify({
             "code": 500,
@@ -416,18 +400,173 @@ def network_options():
         }), 500
 
 
-# Endpoint that is used to get the version information.
-@app.route('/network/rosetta/version', methods=['POST'])
+# Endpoint that is used to get network options.
+@app.route('/network/options', methods=['POST'])
 @limiter.limit("2 per 5 minutes", override_defaults=False)
-def network_rosetta_version():
+def network_options():
+    nodeversion = get_network_options()
+    chain = get_network_status()
+    newchainid = chain["chainid"]
     try:
     # Add the specified text to the output
         versioninfo = {
-    "rosetta_version": "1.2.5",
-    "node_version": "1.0.2",
-    "middleware_version": "0.2.7",
-    "metadata": {}
+        "version": {
+        "rosetta_version": "1.2.5",
+        "node_version": f'{nodeversion["version"]}',
+        "middleware_version": "0.2.7",
+        "metadata": None
+    },
+        "allow": {
+        "operation_statuses": [
+        {
+            "status": "/network/list",
+            "successful": True
+        },
+        {
+            "status": "/network/status",
+            "successful": True
+        },
+        {
+            "status": "/network/options",
+            "successful": True
+        },
+        {
+            "status": "/block",
+            "successful": True
+        },
+        {
+            "status": "/block/transaction",
+            "successful": True
+        },
+        {
+            "status": "/mempool",
+            "successful": True
+        },
+        {
+            "status": "/mempool/transaction",
+            "successful": True
+        },
+        {
+            "status": "/account/balance",
+            "successful": True
+        },
+        {
+            "status": "/account/coins",
+            "successful": True
+        },
+        {
+            "status": "/construction/derive",
+            "successful": True
+        },
+        {
+            "status": "/construction/preprocess",
+            "successful": True
+        },
+        {
+            "status": "/construction/metadata",
+            "successful": True
+        },
+        {
+            "status": "/construction/payloads",
+            "successful": True
+        },
+        {
+            "status": "/construction/combine",
+            "successful": True
+        },
+        {
+            "status": "/construction/parse",
+            "successful": True
+        },
+        {
+            "status": "/construction/hash",
+            "successful": True
+        },
+        {
+            "status": "/construction/submit",
+            "successful": True
+        }
+        ],
+        "operation_types": [
+        "POST"
+        ],
+        "errors": [
+        {
+            "code": 12,
+            "message": "Invalid account format",
+            "description": "This error is returned when the requested AccountIdentifier is improperly formatted.",
+            "retriable": True,
+            "details": None
+        }, 
+        {
+            "code": 500,
+            "message": "Failed to fetch network version",
+            "description": "There was an error while fetching network version from the RPC",
+            "retriable": True,
+            "details": None
+        },
+        {
+            "code": 500,
+            "message": "Failed to fetch block information",
+            "description": "There was an error while fetching block information from the RPC",
+            "retriable": True,
+            "details": None
+        },
+        {
+            "code": 500,
+            "message": "Failed to fetch transaction information",
+            "description": "There was an error while fetching transaction information from the RPC",
+            "retriable": True,
+            "details": None
+        },
+        {
+            "code": 500,
+            "message": "Failed to fetch mempool information",
+            "description": "There was an error while fetching mempool information from the RPC",
+            "retriable": True,
+            "details": None
+        },
+        {
+            "code": 500,
+            "message": "Failed to fetch balance information",
+            "description": "There was an error while fetching balance information from the API",
+            "retriable": True,
+            "details": None
+        },
+        {
+            "code": 500,
+            "message": "Failed to fetch UTXOs",
+            "description": "There was an error while fetching UTXOs from the API",
+            "retriable": True,
+            "details": None
+        },
+        {
+            "code": 500,
+            "message": "Failed to create new verus wallet address",
+            "description": "There was an error while fetching the information from the Local RPC",
+            "retriable": True,
+            "details": None
+        }
+        ],
+        "historical_balance_lookup": True,
+        "timestamp_start_index": 1231006505,
+        "call_methods": [
+        "POST"
+        ],
+        "balance_exemptions": [
+        {
+            "sub_account_address": newchainid,
+            "currency": {
+            "symbol": "VRSC",
+            "decimals": 8,
+            "metadata": None
+            },
+            "exemption_type": "dynamic"
+        }
+        ],
+        "mempool_coins": False
     }
+}
         return jsonify(versioninfo), 200
     except:
         return jsonify({
@@ -450,10 +589,109 @@ def block_info():
     if not block_identifier:
         return jsonify({"error": "Block identifier not provided"}), 400
 
-    block_data = get_block_info(block_identifier)
-
-    if block_data:
-        return jsonify({"block_info": block_data}), 200
+    data = get_block_info(block_identifier)
+    # data = json.dumps(block_data)
+    for tx in data['tx']:
+        txid = tx
+    hash_value = data['hash']
+    height = data['height']
+    time = data['time']
+    blocktype = data['blocktype']
+    confirmations = data['confirmations']
+    if int(confirmations) > 15:
+        status = "confirmed"
+    else:
+        status = "unconfirmed"
+    finalsaplingroot = data['finalsaplingroot']
+    value, addr1, addr2 = gettxamt(txid)
+    chain = get_network_status()
+    newchainid = chain["chainid"]
+    if data:
+        data = {
+        "block": {
+            "block_identifier": {
+            "index": hash_value,
+            "hash": height
+            },
+            "parent_block_identifier": {
+            "index": 1123941,
+            "hash": finalsaplingroot
+            },
+            "timestamp": time,
+            "transactions": [
+            {
+                "transaction_identifier": {
+                "hash": txid
+                },
+                "operations": [
+                {
+                    "operation_identifier": {
+                    "index": 5,
+                    "network_index": 0
+                    },
+                    "related_operations": [
+                    {
+                        "index": 5,
+                        "network_index": 0
+                    }
+                    ],
+                    "type": blocktype,
+                    "status": status,
+                    "account": {
+                    "address": addr1,
+                    "sub_account": {
+                        "address": addr2,
+                        "metadata": None
+                    },
+                    "metadata": None
+                    },
+                    "amount": {
+                    "value": value,
+                    "currency": {
+                        "symbol": "VRSC",
+                        "decimals": 8,
+                        "metadata": None
+                    },
+                    "metadata": None
+                    },
+                    "coin_change": {
+                    "coin_identifier": {
+                        "identifier": newchainid
+                    },
+                    "coin_action": None
+                    },
+                    "metadata": None
+                }
+                ],
+                "related_transactions": [
+                {
+                    "network_identifier": {
+                    "blockchain": "VRSC",
+                    "network": newchainid,
+                    "sub_network_identifier":
+                    {
+                        "network": newchainid,
+                        "metadata": None
+                    }
+                    },
+                    "transaction_identifier": {
+                    "hash": txid
+                    },
+                    "direction": "forward"
+                }
+                ],
+                "metadata": None
+            }
+            ],
+            "metadata": None
+        },
+        "other_transactions": [
+            {
+            "hash": txid
+            }
+        ]
+        }
+        return jsonify(data), 200
     else:
         return jsonify({
             "code": 500,
@@ -476,9 +714,87 @@ def block_transaction_info():
         return jsonify({"error": "Transaction ID not provided"}), 400
 
     transaction_data = get_transaction_info(txid)
-
+    print(transaction_data)
+    amount = transaction_data['vout'][0]['value']
+    vout_addresses = []
+    vout_types = []
+    for vout_item in transaction_data['vout']:
+        addresses = vout_item['scriptPubKey']['addresses']
+        vout_type = vout_item['scriptPubKey']['type']
+        vout_addresses.append(addresses)
+        vout_types.append(vout_type)
+    chain = get_network_status()
+    newchainid = chain["chainid"]
+    txid = transaction_data["txid"]
     if transaction_data:
-        return jsonify({"transaction_info": transaction_data}), 200
+        data = {
+    "transaction": {
+        "transaction_identifier": {
+        "hash": txid
+        },
+        "operations": [
+        {
+            "operation_identifier": {
+            "index": 5,
+            "network_index": 0
+            },
+            "related_operations": [
+            {
+                "index": 5,
+                "network_index": 0
+            }
+            ],
+            "type": "Transfer",
+            "status": vout_types[0],
+            "account": {
+            "address": vout_addresses[0],
+            "sub_account": {
+                "address": None,
+                "metadata": None
+            },
+            "metadata": None
+            },
+            "amount": {
+            "value": amount,
+            "currency": {
+                "symbol": "VRSC",
+                "decimals": 8,
+                "metadata": None
+            },
+            "metadata": None
+            },
+            "coin_change": {
+            "coin_identifier": {
+                "identifier": newchainid
+            },
+            "coin_action": None
+            },
+            "metadata": None
+        }
+        ],
+        "related_transactions": [
+        {
+            "network_identifier": {
+            "blockchain": "VRSC",
+            "network": newchainid,
+            "sub_network_identifier": {
+                "network": newchainid,
+                "metadata": None
+            }
+            },
+            "transaction_identifier": {
+            "hash": txid
+            },
+            "direction": "forward"
+        }
+        ],
+        "metadata": None
+    }
+    }
+        sub_account = data["transaction"]["operations"]
+        for operation in sub_account:
+            operation["account"]["sub_account"]["address"] = vout_addresses[1] if len(vout_addresses) > 1 else vout_addresses[0]
+        return jsonify(data), 200
     else:
         return jsonify({
             "code": 500,
@@ -493,7 +809,14 @@ def block_transaction_info():
 def mempool_info():
     mempool_data = get_mempool_info()
     if mempool_data:
-        return jsonify({"mempool_info": mempool_data}), 200
+        data = {
+        "transaction_identifiers": [
+            {
+            "hash": mempool_data
+            }
+        ]
+        }
+        return jsonify(data), 200
     else:
         return jsonify({
             "code": 500,
@@ -516,9 +839,28 @@ def account_balance():
         return jsonify({"error": "Address not provided"}), 400
 
     balance_data = get_address_balance(address)
-
+    hash, index = getcurrentblockidentifier()
+    
     if balance_data:
-        return jsonify({"balance_info": balance_data}), 200
+        data = {
+        "block_identifier": {
+            "index": index,
+            "hash": hash
+        },
+        "balances": [
+            {
+            "value": balance_data["balance"],
+            "currency": {
+                "symbol": "VRSC",
+                "decimals": 8,
+                "metadata": None
+            },
+            "metadata": None
+            }
+        ],
+        "metadata": None
+        }
+        return jsonify(data), 200
     else:
         return jsonify({
             "code": 500,
@@ -541,9 +883,36 @@ def account_coins():
         return jsonify({"error": "Address not provided"}), 400
 
     utxos_data = get_address_utxos(address)
-
+    heights = [entry['height'] for entry in utxos_data]
+    txids = [entry['txid'] for entry in utxos_data]
+    satoshis = [entry['satoshis'] for entry in utxos_data]
+    chain = get_network_status()
+    newchainid = chain["chainid"]
     if utxos_data:
-        return jsonify({"utxos": utxos_data}), 200
+        data = {
+        "block_identifier": {
+            "index": heights,
+            "hash": txids
+        },
+        "coins": [
+            {
+            "coin_identifier": {
+                "identifier": newchainid
+            },
+            "amount": {
+                "value": satoshis,
+                "currency": {
+                "symbol": "VRSC",
+                "decimals": 8,
+                "metadata": None
+                },
+                "metadata": None
+            }
+            }
+        ],
+        "metadata": None
+        }
+        return jsonify(data), 200
     else:
         return jsonify({
             "code": 500,
@@ -584,7 +953,8 @@ if __name__ == '__main__':
     if RUN_PRODUCTION == "False":
         app.run(host='0.0.0.0', port=PORT, debug=True)
     elif RUN_PRODUCTION == "True":
-        app_server = gevent.pywsgi.WSGIServer(('0.0.0.0', PORT), app)
+        print("Verus Rosetta DataAPI running on port 5500 in production mode...")
+        app_server = gevent.pywsgi.WSGIServer(('0.0.0.0', int(PORT)), app)
         app_server.serve_forever()
     else:
         print("Please set the RUN_PRODUCTION variable as True or False, Running the API in development mode since the variable is not set...")
