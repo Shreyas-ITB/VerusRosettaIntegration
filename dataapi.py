@@ -21,12 +21,12 @@ RPCUSER = os.environ.get("RPCUSER")
 RPCPASS = os.environ.get("RPCPASS")
 PORT = os.environ.get("DATAPIPORT")
 RUN_PRODUCTION = os.environ.get("RUN_PRODUCTION")
-limiter = Limiter(
-    get_remote_address,
-    app=app,
-    default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://",
-)
+# limiter = Limiter(
+#     get_remote_address,
+#     app=app,
+#     default_limits=["200 per day", "50 per hour"],
+#     storage_uri="memory://",
+# )
 
 # Function definitions.
 
@@ -266,10 +266,20 @@ def get_mempool_info():
         return None
 
 def gettxamt(txid):
-    resp = requests.get(f"https://explorer.verus.io/ext/gettx/{txid}")
-    amount = resp.json()['tx']['vin'][0]['amount']
-    addr1 = resp.json()['tx']['vout'][0]['addresses']
-    addr2 = resp.json()['tx']['vout'][1]['addresses']
+    txid = str(txid)
+    cleaned_string = txid.replace("[", "").replace("]", "").replace("'", "")
+    try:
+        resp = requests.get(f"https://explorer.verus.io/ext/gettx/{cleaned_string}")
+        amount = resp.json()['tx']['vin'][0]['amount']
+        addr1 = resp.json()['tx']['vout'][0]['addresses']
+        try:
+            addr2 = resp.json()['tx']['vout'][1]['addresses']
+        except IndexError:
+            addr2 = addr1
+    except KeyError:
+        amount = None
+        addr1 = None
+        addr2 = None
     return amount, addr1, addr2
 
 # Gets the balance of an address, takes in an argument called address.
@@ -324,7 +334,7 @@ def get_address_utxos(address):
 
 # Endpoint that is used to get the network lists.
 @app.route('/network/list', methods=['POST'])
-@limiter.limit("2 per 5 minutes", override_defaults=False)
+#@limiter.limit("2 per 5 minutes", override_defaults=False)
 def network_list():
     chain = get_network_status()
     newchainid = chain["chainid"]
@@ -356,7 +366,7 @@ def network_list():
 
 # Endpoint that is used to get the network status.
 @app.route('/network/status', methods=['POST'])
-@limiter.limit("2 per 5 minutes", override_defaults=False)
+#@limiter.limit("2 per 5 minutes", override_defaults=False)
 def network_status():
     data = request.get_json()
     try:
@@ -369,7 +379,7 @@ def network_status():
             "index": index,
             "hash": hash
         },
-        "current_block_timestamp": timestamp,
+        "current_block_timestamp": 1582833600000,
         "genesis_block_identifier": {
             "index": gindex,
             "hash": ghash
@@ -402,7 +412,7 @@ def network_status():
 
 # Endpoint that is used to get network options.
 @app.route('/network/options', methods=['POST'])
-@limiter.limit("2 per 5 minutes", override_defaults=False)
+#@limiter.limit("2 per 5 minutes", override_defaults=False)
 def network_options():
     nodeversion = get_network_options()
     chain = get_network_status()
@@ -499,49 +509,49 @@ def network_options():
             "details": None
         }, 
         {
-            "code": 500,
+            "code": 14,
             "message": "Failed to fetch network version",
             "description": "There was an error while fetching network version from the RPC",
             "retriable": True,
             "details": None
         },
         {
-            "code": 500,
+            "code": 16,
             "message": "Failed to fetch block information",
             "description": "There was an error while fetching block information from the RPC",
             "retriable": True,
             "details": None
         },
         {
-            "code": 500,
+            "code": 18,
             "message": "Failed to fetch transaction information",
             "description": "There was an error while fetching transaction information from the RPC",
             "retriable": True,
             "details": None
         },
         {
-            "code": 500,
+            "code": 20,
             "message": "Failed to fetch mempool information",
             "description": "There was an error while fetching mempool information from the RPC",
             "retriable": True,
             "details": None
         },
         {
-            "code": 500,
+            "code": 22,
             "message": "Failed to fetch balance information",
             "description": "There was an error while fetching balance information from the API",
             "retriable": True,
             "details": None
         },
         {
-            "code": 500,
+            "code": 24,
             "message": "Failed to fetch UTXOs",
             "description": "There was an error while fetching UTXOs from the API",
             "retriable": True,
             "details": None
         },
         {
-            "code": 500,
+            "code": 26,
             "message": "Failed to create new verus wallet address",
             "description": "There was an error while fetching the information from the Local RPC",
             "retriable": True,
@@ -578,21 +588,25 @@ def network_options():
 
 # Endpoint that is used to get the information of a block.
 @app.route('/block', methods=['POST'])
-@limiter.limit("2 per 5 minutes", override_defaults=False)
+#@limiter.limit("2 per 5 minutes", override_defaults=False)
 def block_info():
     data = request.get_json()
     if not data:
         return jsonify({"error": "No data provided"}), 400
 
     block_identifier = data.get("block_identifier")
-
     if not block_identifier:
-        return jsonify({"error": "Block identifier not provided"}), 400
-
-    data = get_block_info(block_identifier)
+        block_identifier = data.get("index")
+    try:
+        newblkidentifier = block_identifier['index']
+        data = get_block_info(newblkidentifier)
+    except:
+        data = get_block_info(block_identifier)
     # data = json.dumps(block_data)
-    for tx in data['tx']:
-        txid = tx
+    try:
+        txid = data['tx']
+    except TypeError:
+        txid = None
     hash_value = data['hash']
     height = data['height']
     time = data['time']
@@ -610,32 +624,32 @@ def block_info():
         data = {
         "block": {
             "block_identifier": {
-            "index": hash_value,
-            "hash": height
+            "index": height,
+            "hash": hash_value
             },
             "parent_block_identifier": {
-            "index": 1123941,
+            "index": 0,
             "hash": finalsaplingroot
             },
             "timestamp": time,
             "transactions": [
             {
                 "transaction_identifier": {
-                "hash": txid
+                "hash": f"{txid}"
                 },
                 "operations": [
                 {
                     "operation_identifier": {
-                    "index": 5,
+                    "index": 0,
                     "network_index": 0
                     },
                     "related_operations": [
                     {
-                        "index": 5,
+                        "index": 0,
                         "network_index": 0
                     }
                     ],
-                    "type": blocktype,
+                    "type": "Transfer",
                     "status": status,
                     "account": {
                     "address": addr1,
@@ -646,7 +660,7 @@ def block_info():
                     "metadata": None
                     },
                     "amount": {
-                    "value": value,
+                    "value": f"{value}",
                     "currency": {
                         "symbol": "VRSC",
                         "decimals": 8,
@@ -675,7 +689,7 @@ def block_info():
                     }
                     },
                     "transaction_identifier": {
-                    "hash": txid
+                    "hash": f"{txid}"
                     },
                     "direction": "forward"
                 }
@@ -687,7 +701,7 @@ def block_info():
         },
         "other_transactions": [
             {
-            "hash": txid
+            "hash": f"{txid}"
             }
         ]
         }
@@ -702,35 +716,49 @@ def block_info():
 
 # Endpoint that is used to get the information about a block transaction.
 @app.route('/block/transaction', methods=['POST'])
-@limiter.limit("2 per 5 minutes", override_defaults=False)
+#@limiter.limit("2 per 5 minutes", override_defaults=False)
 def block_transaction_info():
     data = request.get_json()
     if not data:
         return jsonify({"error": "No data provided"}), 400
 
-    txid = data.get("transaction_id")
-
-    if not txid:
-        return jsonify({"error": "Transaction ID not provided"}), 400
-
-    transaction_data = get_transaction_info(txid)
+    print(data)
+    # Parse JSON data
+    parsed_data = json.loads(json.dumps(data))
+    # Access the desired hash value
+    transaction_hash = parsed_data['transaction_identifier']['hash'][2:-2]  # Remove the square brackets and quotes
+    transaction_data = get_transaction_info(transaction_hash)
     print(transaction_data)
-    amount = transaction_data['vout'][0]['value']
-    vout_addresses = []
-    vout_types = []
-    for vout_item in transaction_data['vout']:
-        addresses = vout_item['scriptPubKey']['addresses']
-        vout_type = vout_item['scriptPubKey']['type']
-        vout_addresses.append(addresses)
-        vout_types.append(vout_type)
+    try:
+        amount = transaction_data['vout'][0]['value']
+        txid = transaction_data["txid"]
+        vout_addresses = []
+        vout_types = []
+        for vout_item in transaction_data['vout']:
+            addresses = vout_item['scriptPubKey']['addresses']
+            vout_type = vout_item['scriptPubKey']['type']
+            vout_addresses.append(addresses)
+            vout_types.append(vout_type)
+    except TypeError:
+        amount = None
+        vout_addresses = None
+        vout_types = None
+        txid = None
     chain = get_network_status()
     newchainid = chain["chainid"]
-    txid = transaction_data["txid"]
+    try:
+        val = vout_types[0]
+        addrv = vout_addresses[0]
+        addrv2 = f"{vout_addresses[1]}" if len(vout_addresses) > 1 else f"{vout_addresses[0]}"
+    except:
+        val = "confirmed"
+        addrv = "null"
+        addrv2 = "null"
     if transaction_data:
         data = {
     "transaction": {
         "transaction_identifier": {
-        "hash": txid
+        "hash": f"{txid}"
         },
         "operations": [
         {
@@ -745,9 +773,9 @@ def block_transaction_info():
             }
             ],
             "type": "Transfer",
-            "status": vout_types[0],
+            "status": val,
             "account": {
-            "address": vout_addresses[0],
+            "address": f"{addrv}",
             "sub_account": {
                 "address": None,
                 "metadata": None
@@ -755,7 +783,7 @@ def block_transaction_info():
             "metadata": None
             },
             "amount": {
-            "value": amount,
+            "value": f"{amount}",
             "currency": {
                 "symbol": "VRSC",
                 "decimals": 8,
@@ -783,7 +811,7 @@ def block_transaction_info():
             }
             },
             "transaction_identifier": {
-            "hash": txid
+            "hash": f"{txid}"
             },
             "direction": "forward"
         }
@@ -793,7 +821,7 @@ def block_transaction_info():
     }
         sub_account = data["transaction"]["operations"]
         for operation in sub_account:
-            operation["account"]["sub_account"]["address"] = vout_addresses[1] if len(vout_addresses) > 1 else vout_addresses[0]
+            operation["account"]["sub_account"]["address"] = addrv2
         return jsonify(data), 200
     else:
         return jsonify({
@@ -805,7 +833,7 @@ def block_transaction_info():
 
 # Endpoint that is used to fetch mempool transactions.
 @app.route('/mempool', methods=['POST'])
-@limiter.limit("2 per 5 minutes", override_defaults=False)
+#@limiter.limit("2 per 5 minutes", override_defaults=False)
 def mempool_info():
     mempool_data = get_mempool_info()
     if mempool_data:
@@ -827,7 +855,7 @@ def mempool_info():
 
 # Endpoint that is used to fetch an account's balance.
 @app.route('/account/balance', methods=['POST'])
-@limiter.limit("2 per 5 minutes", override_defaults=False)
+#@limiter.limit("2 per 5 minutes", override_defaults=False)
 def account_balance():
     data = request.get_json()
     if not data:
@@ -871,7 +899,7 @@ def account_balance():
 
 # Endpoint that is used to fetch the unspend amount of coins/transaction in an account.
 @app.route('/account/coins', methods=['POST'])
-@limiter.limit("2 per 5 minutes", override_defaults=False)
+#@limiter.limit("2 per 5 minutes", override_defaults=False)
 def account_coins():
     data = request.get_json()
     if not data:
