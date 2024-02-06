@@ -54,6 +54,34 @@ then run the docker builds \
 
 ### Data API Endpoints
 
+- ```/network/list``` Retrieve all the networks available.
+```sh
+# Call the endpoint with curl:
+curl -X POST http://127.0.0.1:5500/network/list
+```
+```py
+# Make a request using python:
+import requests
+
+url = "http://127.0.0.1:5500/network/list"
+response = requests.post(url)
+print(response.json())
+```
+Expected endpoint behaviour
+```json
+{
+	"network_identifiers": [
+		{
+			"blockchain": "VRSC",
+			"network": "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV",
+			"sub_network_identifier": {
+				"network": "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV"
+			}
+		}
+	]
+}
+```
+
 - ```/network/status``` Retrieve the current status of the network.
 ```sh
 # Call the endpoint with curl:
@@ -66,6 +94,36 @@ import requests
 url = "http://127.0.0.1:5500/network/status"
 response = requests.post(url)
 print(response.json())
+```
+Expected endpoint behaviour
+```json
+{
+	"current_block_identifier": {
+		"hash": "3db50b16921a6f3560a6787c6b6db27dbed65213bbc259599b1a85b2754b1a5e",
+		"index": 2909994
+	},
+	"current_block_timestamp": 1707194343,
+	"genesis_block_identifier": {
+		"hash": "027e3758c3a65b12aa1046462b486d0a63bfa1beae327897f56c5cfb7daaae71",
+		"index": 0
+	},
+	"oldest_block_identifier": {
+		"hash": "027e3758c3a65b12aa1046462b486d0a63bfa1beae327897f56c5cfb7daaae71",
+		"index": 0
+	},
+	"peers": [
+		{
+			"metadata": null,
+			"peer_id": "a8157d22-bef8-4cdf-8eb1-49575d54fb71"
+		}
+	],
+	"sync_status": {
+		"current_index": 2909994,
+		"stage": "Synced",
+		"synced": true,
+		"target_index": 2909994
+	}
+}
 ```
 
 - ```/network/options``` Get the options of the network, including versions and supported features.
