@@ -637,6 +637,126 @@ Expected endpoint behaviour
 }
 ```
 
+- ```/call``` Make a network-specific procedure call
+```sh
+# Call the endpoint with curl:
+curl -X POST -H "Content-Type: application/json" -d '{"method": "getblockchaininfo", "parameter": []}' http://127.0.0.1:5500/call
+```
+```py
+# Make a request using python:
+import requests
+
+url = "http://127.0.0.1:5500/call"
+payload = {
+    "method": "getblockchaininfo",
+    "parameter": []
+}
+response = requests.post(url, json=payload)
+print(response.json())
+```
+Expected endpoint behaviour
+```json
+{
+	"result": {
+		"bestblockhash": "00000000000276e2f22281c19597a3184cffbb2355ddb8e25a188e06e1bb232f",
+		"blocks": 2910026,
+		"chain": "main",
+		"chainid": "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV",
+		"chainstake": "8000000000000000000000000000000000000000000d79a125eb22ac73ff533a",
+		"chainwork": "00000000000000000000000000000000000000026e5624a33b64a8dfbdb15d03",
+		"commitments": 377270,
+		"consensus": {
+			"chaintip": "76b809bb",
+			"nextblock": "76b809bb"
+		},
+		"difficulty": 3335841468412.399,
+		"headers": 2910026,
+		"name": "VRSC",
+		"pruned": false,
+		"size_on_disk": 10735016132,
+		"softforks": [
+			{
+				"enforce": {
+					"found": 4000,
+					"required": 750,
+					"status": true,
+					"window": 4000
+				},
+				"id": "bip34",
+				"reject": {
+					"found": 4000,
+					"required": 950,
+					"status": true,
+					"window": 4000
+				},
+				"version": 2
+			},
+			{
+				"enforce": {
+					"found": 4000,
+					"required": 750,
+					"status": true,
+					"window": 4000
+				},
+				"id": "bip66",
+				"reject": {
+					"found": 4000,
+					"required": 950,
+					"status": true,
+					"window": 4000
+				},
+				"version": 3
+			},
+			{
+				"enforce": {
+					"found": 4000,
+					"required": 750,
+					"status": true,
+					"window": 4000
+				},
+				"id": "bip65",
+				"reject": {
+					"found": 4000,
+					"required": 950,
+					"status": true,
+					"window": 4000
+				},
+				"version": 4
+			}
+		],
+		"upgrades": {
+			"5ba81b19": {
+				"activationheight": 227520,
+				"info": "See https://z.cash/upgrade/overwinter.html for details.",
+				"name": "Overwinter",
+				"status": "active"
+			},
+			"76b809bb": {
+				"activationheight": 227520,
+				"info": "See https://z.cash/upgrade/sapling.html for details.",
+				"name": "Sapling",
+				"status": "active"
+			}
+		},
+		"valuePools": [
+			{
+				"chainValue": 24547.99070065,
+				"chainValueZat": 2454799070065,
+				"id": "sprout",
+				"monitored": true
+			},
+			{
+				"chainValue": 651376.2170615,
+				"chainValueZat": 65137621706150,
+				"id": "sapling",
+				"monitored": true
+			}
+		],
+		"verificationprogress": 1
+	}
+}
+```
+
 ### Construction API Endpoints
 
 - ```/construction/derive``` Create a new wallet address.
