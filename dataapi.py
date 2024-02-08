@@ -594,7 +594,7 @@ def block_info():
             "transactions": [
             {
                 "transaction_identifier": {
-                "hash": f"{txid}"
+                "hash": str(txid)
                 },
                 "operations": [
                 {
@@ -648,7 +648,7 @@ def block_info():
                     }
                     },
                     "transaction_identifier": {
-                    "hash": f"{txid}"
+                    "hash": str(txid)
                     },
                     "direction": "forward"
                 }
@@ -660,7 +660,7 @@ def block_info():
         },
         "other_transactions": [
             {
-            "hash": f"{txid}"
+            "hash": str(txid)
             }
         ]
         }
@@ -715,7 +715,7 @@ def block_transaction_info():
         data = {
     "transaction": {
         "transaction_identifier": {
-        "hash": f"{txid}"
+        "hash": str(txid)
         },
         "operations": [
         {
@@ -732,7 +732,7 @@ def block_transaction_info():
             "type": "Transfer",
             "status": val,
             "account": {
-            "address": f"{addrv}",
+            "address": str(addrv),
             "sub_account": {
                 "address": addrv2,
                 "metadata": None
@@ -768,7 +768,7 @@ def block_transaction_info():
             }
             },
             "transaction_identifier": {
-            "hash": f"{txid}"
+            "hash": str(txid)
             },
             "direction": "forward"
         }
@@ -821,16 +821,17 @@ def account_balance():
     balance_data = get_address_balance(address)
     index_value = data['block_identifier']['index']
     data = get_block_info(index_value)
-    hash = data['tx']
     try:
         value_sat = balance_data['vout'][0]['valueSat']
+        hash = data['tx']
     except:
         value_sat = "00000000"
+        hash = "0000000000000000000000000000000000000000000000000000000000000000"
     if balance_data:
         data = {
         "block_identifier": {
             "index": index_value,
-            "hash": "0000000000000000000000000000000000000000000000000000000000000000"
+            "hash": str(hash)
         },
         "balances": [
             {
