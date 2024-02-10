@@ -135,10 +135,10 @@ then run the docker builds \
 ```
 - Run the CLI to test the API (assuming that the API is already running, and make sure that the API is running in development mode ``RUN_PRODUCTION=False`` Run production must be set to false)
 - Execute the below commands to test the API with different config files we have created.
-```sh
+```bash
 ./rosetta-cli check:data --configuration-file default.json
 ```
-```sh
+```bash
 ./rosetta-cli check:data --configuration-file simple.json
 ```
 - You can also change the data in these config files according to your preference.
