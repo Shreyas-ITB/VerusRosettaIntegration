@@ -1,6 +1,8 @@
 # Verus Network Data API
 # Used to provide data for rosetta integration 
 # Coded by Shreyas and Shreya S from the verus community
+# Coinbase Docs: https://docs.cloud.coinbase.com/rosetta/docs/welcome
+# Github: https://github.com/Shreyas-ITB/VerusRosettaIntegration
 
 
 # Module imports.
@@ -21,12 +23,20 @@ RPCUSER = os.environ.get("RPCUSER")
 RPCPASS = os.environ.get("RPCPASS")
 PORT = os.environ.get("DATAPIPORT")
 RUN_PRODUCTION = os.environ.get("RUN_PRODUCTION")
-# limiter = Limiter(
-#     get_remote_address,
-#     app=app,
-#     default_limits=["200 per day", "50 per hour"],
-#     storage_uri="memory://",
-# )
+
+# Initialize the rate limiter only in production mode
+if RUN_PRODUCTION == "True" or RUN_PRODUCTION == "true":
+    limiter = Limiter(
+        get_remote_address,
+        app=app,
+        default_limits=["200 per day", "50 per hour"],
+        storage_uri="memory://",
+    )
+else:
+    None
+
+# Create a dictionary to save all the balance related data for temporary use
+baldata = []
 
 # Function definitions.
 
@@ -138,6 +148,7 @@ def get_network_status():
         # Handle the error case
         return None
 
+# Get the current block identifier
 def getcurrentblockidentifier():
     payload = {
         "jsonrpc": "1.0",
@@ -145,13 +156,16 @@ def getcurrentblockidentifier():
         "method": "getbestblockhash",
         "params": []
     }
-
-    # Make the request using the provided function
     response_json = send_request("POST", RPCURL, {'content-type': 'text/plain;'}, payload)
-    req = requests.get(f"https://explorer.verus.io/api/getblock?hash={response_json['result']}")
-    resp = req.json()['height']
-    return response_json['result'], resp
+    return response_json['result']
 
+# Get current block identifier height from a hash
+def getcurrentblockidentifierheight(hash):
+    req = requests.get(f"https://explorer.verus.io/api/getblock?hash={hash}")
+    resp = req.json()['height']
+    return resp
+
+# Get genesis block identifier
 def getgenesisblockidentifier():
     payload = {
         "jsonrpc": "1.0",
@@ -166,13 +180,16 @@ def getgenesisblockidentifier():
     resp = req.json()['height']
     return response_json['result'], resp
 
+# Get current block height 
 def getcurrentblockheight():
     payload = {}
     data = send_request("GET", "https://explorer.verus.io/api/getblockcount", {'content-type': 'text/plain;'}, payload)
     return data
 
+# Get the syncing status
 def getsyncstatus():
-    hash0, height0 = getcurrentblockidentifier()
+    hash0 = getcurrentblockidentifier()
+    height0 = getcurrentblockidentifierheight(hash0)
     height = getcurrentblockheight()
     calc = int(height) / int(height0)
     if calc == 1:
@@ -183,6 +200,7 @@ def getsyncstatus():
         boolean = False
     return syncstat, height0, height, boolean
 
+# Get block timestamp
 def getblocktimestamp():
     payload = {
         "jsonrpc": "1.0",
@@ -265,6 +283,7 @@ def get_mempool_info():
         # Handle the error case
         return None
 
+# Get transaction amount from a transaction id
 def gettxamt(txid):
     txid = str(txid)
     cleaned_string = txid.replace("[", "").replace("]", "").replace("'", "")
@@ -277,9 +296,9 @@ def gettxamt(txid):
         except IndexError:
             addr2 = addr1
     except KeyError:
-        amount = None
-        addr1 = None
-        addr2 = None
+        amount = "00000000"
+        addr1 = "iCRUc98jcJCP3JEntuud7Ae6eeaWtfZaZK"
+        addr2 = "iCRUc98jcJCP3JEntuud7Ae6eeaWtfZaZK"
     return amount, addr1, addr2
 
 # Gets the balance of an address, takes in an argument called address.
@@ -334,7 +353,6 @@ def get_address_utxos(address):
 
 # Endpoint that is used to get the network lists.
 @app.route('/network/list', methods=['POST'])
-#@limiter.limit("2 per 5 minutes", override_defaults=False)
 def network_list():
     chain = get_network_status()
     newchainid = chain["chainid"]
@@ -366,17 +384,26 @@ def network_list():
 
 # Endpoint that is used to get the network status.
 @app.route('/network/status', methods=['POST'])
-#@limiter.limit("2 per 5 minutes", override_defaults=False)
 def network_status():
     data = request.get_json()
     try:
-        hash, index = getcurrentblockidentifier()
+        hash = getcurrentblockidentifier()
+        indexval = getcurrentblockidentifierheight(hash)
         ghash, gindex = getgenesisblockidentifier()
         syncstat, height0, height, boolean = getsyncstatus()
         timestamp = getblocktimestamp()
+        RUN_PRODUCTION = os.environ.get("RUN_PRODUCTION")
+        print(RUN_PRODUCTION)
+        if RUN_PRODUCTION == "True" or RUN_PRODUCTION == "true":
+            hash = hash
+            indexval = indexval
+        else:
+            hashhe = get_block_info(1500)
+            hash = hashhe['hash']
+            indexval = 1500
         info = {
         "current_block_identifier": {
-            "index": index,
+            "index": indexval,
             "hash": hash
         },
         "current_block_timestamp": 1582833600000,
@@ -402,7 +429,8 @@ def network_status():
         ]
         }
         return info, 200
-    except:
+    except Exception as e:
+        print(e)
         return jsonify({
             "code": 500,
             "message": "Failed to fetch network version",
@@ -412,7 +440,6 @@ def network_status():
 
 # Endpoint that is used to get network options.
 @app.route('/network/options', methods=['POST'])
-#@limiter.limit("2 per 5 minutes", override_defaults=False)
 def network_options():
     nodeversion = get_network_options()
     chain = get_network_status()
@@ -437,13 +464,18 @@ def network_options():
             "successful": True
         },
         {
+            "status": "processing",
+            "successful": True
+        },
+        {
             "status": "pubkey",
             "successful": True
         },
         ],
         "operation_types": [
         "Transfer",
-        "mined"
+        "mined",
+        "minted"
         ],
         "errors": [
         {
@@ -533,7 +565,6 @@ def network_options():
 
 # Endpoint that is used to get the information of a block.
 @app.route('/block', methods=['POST'])
-#@limiter.limit("2 per 5 minutes", override_defaults=False)
 def block_info():
     data = request.get_json()
     if not data:
@@ -566,19 +597,20 @@ def block_info():
     else:
         status = "unconfirmed"
     finalsaplingroot = data['finalsaplingroot']
-    try:
-        value, addr1, addr2 = gettxamt(txid)
-        newvalue = int(str(value).replace(".", ""))
-    except:
-        newvalue = "00000000"
-    if addr1 == "" and addr2 == "":
-        addr1 = "null"
-        addr2 = "null"
-    else:
-        addr1 = addr1
-        addr2 = addr2
+    value, addr1, addr2 = gettxamt(txid)
     chain = get_network_status()
     newchainid = chain["chainid"]
+    if index_value == 0:
+        newindexv = 0
+    else:
+        newindexv = index_value - 1
+    parent_hash = get_block_info(newindexv)
+    parent_hash = parent_hash['hash']
+    RUN_PRODUCTION = os.environ.get("RUN_PRODUCTION")
+    if RUN_PRODUCTION == True or RUN_PRODUCTION == "true":
+        value = int(str(value).replace(".", ""))
+    else:
+        value = "00000000"
     if data:
         data = {
         "block": {
@@ -587,8 +619,8 @@ def block_info():
             "hash": hash_value
             },
             "parent_block_identifier": {
-            "index": 0,
-            "hash": finalsaplingroot
+            "index": newindexv,
+            "hash": parent_hash
             },
             "timestamp": time,
             "transactions": [
@@ -611,15 +643,15 @@ def block_info():
                     "type": blocktype,
                     "status": status,
                     "account": {
-                    "address": "iCRUc98jcJCP3JEntuud7Ae6eeaWtfZaZK",
+                    "address": addr1,
                     "sub_account": {
-                        "address": "iCRUc98jcJCP3JEntuud7Ae6eeaWtfZaZK",
+                        "address": addr2,
                         "metadata": None
                     },
                     "metadata": None
                     },
                     "amount": {
-                    "value": "10000000",
+                    "value": f"{value}",
                     "currency": {
                         "symbol": "VRSC",
                         "decimals": 8,
@@ -675,7 +707,6 @@ def block_info():
 
 # Endpoint that is used to get the information about a block transaction.
 @app.route('/block/transaction', methods=['POST'])
-#@limiter.limit("2 per 5 minutes", override_defaults=False)
 def block_transaction_info():
     data = request.get_json()
     if not data:
@@ -687,8 +718,8 @@ def block_transaction_info():
     transaction_data = get_transaction_info(transaction_hash)
     index_value = data['block_identifier']['index']
     try:
-        amount = transaction_data['vout'][0]['value']
         txid = transaction_data["txid"]
+        amount = transaction_data['vout'][0]['value']
         vout_addresses = []
         vout_types = []
         for vout_item in transaction_data['vout']:
@@ -697,7 +728,6 @@ def block_transaction_info():
             vout_addresses.append(addresses)
             vout_types.append(vout_type)
     except TypeError:
-        amount = "000000000"
         vout_addresses = None
         vout_types = None
         txid = None
@@ -708,9 +738,14 @@ def block_transaction_info():
         addrv = vout_addresses[0]
         addrv2 = f"{vout_addresses[1]}" if len(vout_addresses) > 1 else f"{vout_addresses[0]}"
     except:
-        val = "confirmed"
-        addrv = "RMfrbs9eApM4VXV6htayiw1ks5WUGDvGtB"
-        addrv2 = "RMfrbs9eApM4VXV6htayiw1ks5WUGDvGtB"
+        val = "processing"
+        addrv = "iCRUc98jcJCP3JEntuud7Ae6eeaWtfZaZK"
+        addrv2 = "iCRUc98jcJCP3JEntuud7Ae6eeaWtfZaZK"
+    RUN_PRODUCTION = os.environ.get("RUN_PRODUCTION")
+    if RUN_PRODUCTION == True or RUN_PRODUCTION == "true":
+        amount = amount
+    else:
+        amount = "00000000"
     if transaction_data:
         data = {
     "transaction": {
@@ -740,7 +775,7 @@ def block_transaction_info():
             "metadata": None
             },
             "amount": {
-            "value": "10000000",
+            "value": f"{amount}",
             "currency": {
                 "symbol": "VRSC",
                 "decimals": 8,
@@ -790,7 +825,6 @@ def block_transaction_info():
 
 # Endpoint that is used to fetch mempool transactions.
 @app.route('/mempool', methods=['POST'])
-#@limiter.limit("2 per 5 minutes", override_defaults=False)
 def mempool_info():
     mempool_data = get_mempool_info()
     if mempool_data:
@@ -812,21 +846,23 @@ def mempool_info():
 
 # Endpoint that is used to fetch an account's balance.
 @app.route('/account/balance', methods=['POST'])
-#@limiter.limit("2 per 5 minutes", override_defaults=False)
 def account_balance():
+    global baldata
     data = request.get_json()
     if not data:
         return jsonify({"error": "No data provided"}), 400
     address = data['account_identifier']['address']
     balance_data = get_address_balance(address)
+    baldata.append(balance_data)
+    value_satt = baldata[0]['balance']
+    value_sat = int(str(value_satt)[:8])
     index_value = data['block_identifier']['index']
     data = get_block_info(index_value)
-    try:
-        value_sat = balance_data['vout'][0]['valueSat']
-        hash = data['tx']
-    except:
+    if RUN_PRODUCTION == True or RUN_PRODUCTION == "true":
+        value_sat = value_sat
+    elif RUN_PRODUCTION == False or RUN_PRODUCTION == "false":
         value_sat = "00000000"
-        hash = "0000000000000000000000000000000000000000000000000000000000000000"
+    hash = data['hash']
     if balance_data:
         data = {
         "block_identifier": {
@@ -846,7 +882,6 @@ def account_balance():
         ],
         "metadata": None
         }
-        print(data)
         return jsonify(data), 200
     else:
         return jsonify({
@@ -858,7 +893,6 @@ def account_balance():
 
 # Endpoint that is used to fetch the unspend amount of coins/transaction in an account.
 @app.route('/account/coins', methods=['POST'])
-#@limiter.limit("2 per 5 minutes", override_defaults=False)
 def account_coins():
     data = request.get_json()
     if not data:
@@ -914,7 +948,6 @@ def call_rpc():
         # Check if the request has the necessary parameters
         if not data or "method" not in data:
             return jsonify({"error": "Invalid request. 'method' is a mandatory parameter."}), 400
-
         # Extract parameters from the request
         method = data["method"]
         parameter = data.get("parameter")
@@ -926,10 +959,8 @@ def call_rpc():
     }
         # Call the send_request function to make a request to your RPC
         response = send_request("POST", RPCURL, {'content-type': 'text/plain;'}, payload)
-
         # Return the response from your RPC
         return jsonify(response), 200
-
     except requests.exceptions.RequestException as rpc_error:
         return jsonify({"error": str(rpc_error)}), 500
 
@@ -937,12 +968,12 @@ def call_rpc():
 if __name__ == '__main__':
     # Only use the debug=True in development environment.
     # Use WSGI to run the API in production environment.
-    if RUN_PRODUCTION == "False":
+    if RUN_PRODUCTION == "False" or RUN_PRODUCTION == "false":
         app.run(host='0.0.0.0', port=PORT, debug=True)
-    elif RUN_PRODUCTION == "True":
-        print("Verus Rosetta DataAPI running on port 5500 in production mode...")
+    elif RUN_PRODUCTION == "True" or RUN_PRODUCTION == "true":
+        print(f"Verus Rosetta DataAPI running on port {PORT} in production mode...")
         app_server = gevent.pywsgi.WSGIServer(('0.0.0.0', int(PORT)), app)
         app_server.serve_forever()
     else:
-        print("Please set the RUN_PRODUCTION variable as True or False, Running the API in development mode since the variable is not set...")
+        print("Please make sure that the RUN_PRODUCTION variable is either True or False, Running the API in development mode since the variable is not set...")
         app.run(host='0.0.0.0', port=PORT, debug=True)
