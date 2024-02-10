@@ -50,6 +50,95 @@ then run the docker builds \
 - Construction API will be running on the public IP of the server on port 5600 (default)
 - If you are trying to run the APIs in production mode then i would recommend to pass the IPs of both the APIs into cloudflare protection, that would reduce the risk of getting ddos'ed. There are built in rate limiters into the APIs already but just to keep it more safer cloudflare is necessary.
 
+## Testing
+
+- Download the mesh-cli (previously known as rosetta-cli) from the [github page](https://github.com/coinbase/mesh-cli/releases/tag/v0.10.3) on a linux machine.
+- create a json file named ``default.json`` in the same directory where the mesh-cli's (rosetta-cli) executable is present. (checks all the things present in the API)
+- The below json data goes in the ``default.json`` file you have created, copy the content below, paste it and save the file.
+```json
+{
+ "network": {
+  "blockchain": "VRSC",
+  "network": "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV",
+  "sub_network_identifier": {
+      "network": "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV"
+    }
+ },
+ "online_url": "http://127.0.0.1:5500",
+ "data_directory": "",
+ "http_timeout": 30,
+ "max_retries": 5,
+ "retry_elapsed_time": 0,
+ "max_online_connections": 120,
+ "max_sync_concurrency": 64,
+ "tip_delay": 300,
+ "max_reorg_depth": 100,
+ "log_configuration": false,
+ "compression_disabled": false,
+ "l0_in_memory_enabled": false,
+ "all_in_memory_enabled": false,
+ "error_stack_trace_disabled": false,
+ "coin_supported": false,
+ "construction": null,
+ "data": {
+  "active_reconciliation_concurrency": 16,
+  "inactive_reconciliation_concurrency": 4,
+  "inactive_reconciliation_frequency": 250,
+  "log_blocks": false,
+  "log_transactions": false,
+  "log_balance_changes": false,
+  "log_reconciliations": false,
+  "ignore_reconciliation_error": false,
+  "exempt_accounts": "",
+  "bootstrap_balances": "",
+  "interesting_accounts": "",
+  "reconciliation_disabled": false,
+  "reconciliation_drain_disabled": false,
+  "inactive_discrepancy_search_disabled": false,
+  "balance_tracking_disabled": false,
+  "coin_tracking_disabled": false,
+  "status_port": 9090,
+  "results_output_file": "",
+  "pruning_block_disabled": false,
+  "pruning_balance_disabled": false,
+  "initial_balance_fetch_disabled": false
+ },
+ "perf": null,
+ "sign": null
+}
+```
+- Create another json file with the name ``simple.json`` in the same directory where the mesh-cli's (rosetta-cli) executable is present. (checks everything except the reconcillation)
+- As usual copy the json content below, paste it in the ``simple.json`` you have created and save it.
+```json
+{
+ "network": {
+  "blockchain": "VRSC",
+  "network": "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV",
+  "sub_network_identifier": {
+      "network": "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV"
+    }
+ },
+ "online_url": "http://127.0.0.1:5500",
+ "data_directory": "",
+ "http_timeout": 10000,
+ "tip_delay": 3000,
+ "data": {
+  "historical_balance_disabled": true,
+  "reconciliation_disabled": true,
+  "inactive_discrepancy_search_disabled": false,
+  "balance_tracking_disabled": false,
+  "end_conditions": {
+    "tip": true
+  }
+ }
+}
+```
+- Run the CLI to test the API (assuming that the API is already running, and make sure that the API is running in development mode ``RUN_PRODUCTION=False`` Run production must be set to false)
+- Execute the below commands to test the API with different config files we have created.
+```./rosetta-cli check:data --configuration-file default.json``` \
+```./rosetta-cli check:data --configuration-file simple.json```
+- You can also change the data in these config files according to your preference.
+- Running the API in development mode and testing is mandatory as it reduces the number of blocks and saves time. (syncing all the blocks in the network by running the CLI tool is not permitted because it consumes a lot of time and needs a very powerful computer to handle multiple requests per second thats being given out to the API, running in development mode also disables the rate limiter so that it will be easy for the CLI tool to communicate)
 ## Endpoints
 
 ### Data API Endpoints
@@ -142,162 +231,112 @@ print(response.json())
 Expected endpoint behaviour
 ```json
 {
-	"allow": {
-		"balance_exemptions": [
-			{
-				"currency": {
-					"decimals": 8,
-					"metadata": null,
-					"symbol": "VRSC"
-				},
-				"exemption_type": "dynamic",
-				"sub_account_address": "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV"
-			}
-		],
-		"call_methods": [
-			"POST"
-		],
-		"errors": [
-			{
-				"code": 12,
-				"description": "This error is returned when the requested AccountIdentifier is improperly formatted.",
-				"details": null,
-				"message": "Invalid account format",
-				"retriable": true
-			},
-			{
-				"code": 500,
-				"description": "There was an error while fetching network version from the RPC",
-				"details": null,
-				"message": "Failed to fetch network version",
-				"retriable": true
-			},
-			{
-				"code": 500,
-				"description": "There was an error while fetching block information from the RPC",
-				"details": null,
-				"message": "Failed to fetch block information",
-				"retriable": true
-			},
-			{
-				"code": 500,
-				"description": "There was an error while fetching transaction information from the RPC",
-				"details": null,
-				"message": "Failed to fetch transaction information",
-				"retriable": true
-			},
-			{
-				"code": 500,
-				"description": "There was an error while fetching mempool information from the RPC",
-				"details": null,
-				"message": "Failed to fetch mempool information",
-				"retriable": true
-			},
-			{
-				"code": 500,
-				"description": "There was an error while fetching balance information from the API",
-				"details": null,
-				"message": "Failed to fetch balance information",
-				"retriable": true
-			},
-			{
-				"code": 500,
-				"description": "There was an error while fetching UTXOs from the API",
-				"details": null,
-				"message": "Failed to fetch UTXOs",
-				"retriable": true
-			},
-			{
-				"code": 500,
-				"description": "There was an error while fetching the information from the Local RPC",
-				"details": null,
-				"message": "Failed to create new verus wallet address",
-				"retriable": true
-			}
-		],
-		"historical_balance_lookup": true,
-		"mempool_coins": false,
-		"operation_statuses": [
-			{
-				"status": "/network/list",
-				"successful": true
-			},
-			{
-				"status": "/network/status",
-				"successful": true
-			},
-			{
-				"status": "/network/options",
-				"successful": true
-			},
-			{
-				"status": "/block",
-				"successful": true
-			},
-			{
-				"status": "/block/transaction",
-				"successful": true
-			},
-			{
-				"status": "/mempool",
-				"successful": true
-			},
-			{
-				"status": "/mempool/transaction",
-				"successful": true
-			},
-			{
-				"status": "/account/balance",
-				"successful": true
-			},
-			{
-				"status": "/account/coins",
-				"successful": true
-			},
-			{
-				"status": "/construction/derive",
-				"successful": true
-			},
-			{
-				"status": "/construction/preprocess",
-				"successful": true
-			},
-			{
-				"status": "/construction/metadata",
-				"successful": true
-			},
-			{
-				"status": "/construction/payloads",
-				"successful": true
-			},
-			{
-				"status": "/construction/combine",
-				"successful": true
-			},
-			{
-				"status": "/construction/parse",
-				"successful": true
-			},
-			{
-				"status": "/construction/hash",
-				"successful": true
-			},
-			{
-				"status": "/construction/submit",
-				"successful": true
-			}
-		],
-		"operation_types": [
-			"POST"
-		],
-		"timestamp_start_index": 1231006505
-	},
-	"version": {
-		"metadata": null,
-		"middleware_version": "0.2.7",
-		"node_version": "2000753",
-		"rosetta_version": "1.2.5"
-	}
+    "allow": {
+        "balance_exemptions": [
+            {
+                "currency": {
+                    "decimals": 8,
+                    "metadata": null,
+                    "symbol": "VRSC"
+                },
+                "exemption_type": "dynamic",
+                "sub_account_address": "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV"
+            }
+        ],
+        "call_methods": [
+            "POST"
+        ],
+        "errors": [
+            {
+                "code": 12,
+                "description": "This error is returned when the requested AccountIdentifier is improperly formatted.",
+                "details": null,
+                "message": "Invalid account format",
+                "retriable": true
+            },
+            {
+                "code": 14,
+                "description": "There was an error while fetching network version from the RPC",
+                "details": null,
+                "message": "Failed to fetch network version",
+                "retriable": true
+            },
+            {
+                "code": 16,
+                "description": "There was an error while fetching block information from the RPC",
+                "details": null,
+                "message": "Failed to fetch block information",
+                "retriable": true
+            },
+            {
+                "code": 18,
+                "description": "There was an error while fetching transaction information from the RPC",
+                "details": null,
+                "message": "Failed to fetch transaction information",
+                "retriable": true
+            },
+            {
+                "code": 20,
+                "description": "There was an error while fetching mempool information from the RPC",
+                "details": null,
+                "message": "Failed to fetch mempool information",
+                "retriable": true
+            },
+            {
+                "code": 22,
+                "description": "There was an error while fetching balance information from the API",
+                "details": null,
+                "message": "Failed to fetch balance information",
+                "retriable": true
+            },
+            {
+                "code": 24,
+                "description": "There was an error while fetching UTXOs from the API",
+                "details": null,
+                "message": "Failed to fetch UTXOs",
+                "retriable": true
+            },
+            {
+                "code": 26,
+                "description": "There was an error while fetching the information from the Local RPC",
+                "details": null,
+                "message": "Failed to create new verus wallet address",
+                "retriable": true
+            }
+        ],
+        "historical_balance_lookup": true,
+        "mempool_coins": false,
+        "operation_statuses": [
+            {
+                "status": "confirmed",
+                "successful": true
+            },
+            {
+                "status": "unconfirmed",
+                "successful": true
+            },
+            {
+                "status": "processing",
+                "successful": true
+            },
+            {
+                "status": "pubkey",
+                "successful": true
+            }
+        ],
+        "operation_types": [
+            "Transfer",
+            "mined",
+            "minted"
+        ],
+        "timestamp_start_index": 1231006505
+    },
+    "version": {
+        "metadata": null,
+        "middleware_version": "0.2.7",
+        "node_version": "2000753",
+        "rosetta_version": "1.2.5"
+    }
 }
 ```
 
@@ -825,8 +864,5 @@ print(response.json())
 ```
 
 ## Information
-- This APIs do not contain all the routes/endpoints that are mentioned in the rosetta docs as verus RPCs does the work with one command. For example in the construction API there is an endpoint mentioned in the docs called ``/construction/preprocess`` we dont need metadata generation to create a transaction, the next endpoint ``/construction/payloads`` does it all.
-- ``/call`` is not there to make arbitrary procedure calls as the RPC has nothing related to it (afaik).
-- ``/construction/hash`` is not needed, the ``/construction/parse`` gives you the hash at the end of its output, we dont need another route to get the hash when your transaction is completed.
 - This is a complete python implementation, there is no use of rosetta-sdks which use golang to implement the same routes into other blockchains. Since python is way more reliable, easy and flexible i have used it.
 - Both the python APIs contain commented lines so that anyone who will be contributing to this project can easily understand whats going on in the code.
