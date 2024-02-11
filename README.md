@@ -21,8 +21,7 @@ Rename the ``example.env`` into ``.env`` and then edit the following information
 RPCURL=http://127.0.0.1:27486/ # The default verus daemon local url. Recommended to leave it alone.
 RPCUSER="" # The RPC Username located in the vrsc.conf file inside the "~/.komodo/VRSC" folder
 RPCPASS="" # The RPC Password located in the vrsc.conf file inside the "~/.komodo/VRSC" folder.
-DATAPIPORT=5500 # Default Data API Port.
-CONSTAPIPORT=5600 # Default Construction API Port.
+ROSETTAAPI=5500 # Default API Port.
 RUN_PRODUCTION=False # Run the APIs in production mode.
 ```
 Changing the ``RUN_PRODUCTION`` to ``True`` runs the APIs in production mode (this applies for both the data and construction APIs) if its kept ``False`` then it would run in development mode.
@@ -35,16 +34,13 @@ Install the dependencies required for the APIs \
 ## Running the API
 
 Once you have completed the setup part, all you have to do is run the python files \
-```python3 dataapi.py```
-```python3 constructionapi.py```
+```python3 rosettaapi.py```
 
 If you want to run it as a docker image, you have to build the image and run it \
-```sudo docker build -t dataapi.py .``` \
-```sudo docker build -t constructionapi.py .```
+```sudo docker build -t rosettaapi.py .``` \
 
 then run the docker builds \
-```sudo docker run -p 5500:5500 --env-file .env dataapi.py``` \
-```sudo docker run -p 5500:5600 --env-file .env constructionapi.py```
+```sudo docker run -p 5500:5500 --env-file .env rosettaapi.py``` \
 - Docker will automatically install the requirements and setup an environment for you so if you are running the APIs using docker then there is no need to install the dependencies and setting up the python virtual environment in the previous step.
 - Data API will be running on the public IP of the server on port 5500 (default)
 - Construction API will be running on the public IP of the server on port 5600 (default)
@@ -145,7 +141,7 @@ then run the docker builds \
 - Running the API in development mode and testing is mandatory as it reduces the number of blocks and saves time. (syncing all the blocks in the network by running the CLI tool is not permitted because it consumes a lot of time and needs a very powerful computer to handle multiple requests per second thats being given out to the API, running in development mode also disables the rate limiter so that it will be easy for the CLI tool to communicate)
 ## Endpoints
 
-### Data API Endpoints
+### API Endpoints
 
 - ```/network/list``` Retrieve all the networks available.
 ```sh
@@ -799,8 +795,6 @@ Expected endpoint behaviour
 	}
 }
 ```
-
-### Construction API Endpoints
 
 - ```/construction/derive``` Create a new wallet address.
 ```sh
