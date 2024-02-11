@@ -15,5 +15,4 @@ EXPOSE 5500
 EXPOSE 5600
 
 # Run your Flask apps when the container launches
-CMD ["python", "dataapi.py"]
-CMD ["python", "constructionapi.py"]
+CMD ["python", "rosettapi.py"]
