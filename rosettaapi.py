@@ -21,7 +21,7 @@ load_dotenv(find_dotenv())
 RPCURL = os.environ.get("RPCURL")
 RPCUSER = os.environ.get("RPCUSER")
 RPCPASS = os.environ.get("RPCPASS")
-PORT = os.environ.get("DATAPIPORT")
+PORT = os.environ.get("ROSETTAAPI")
 RUN_PRODUCTION = os.environ.get("RUN_PRODUCTION")
 
 # Initialize the rate limiter only in production mode
