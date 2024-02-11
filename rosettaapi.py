@@ -111,6 +111,7 @@ def getnewaddress():
 
 # Helps to create an unsigned raw transaction, takes in a few arguments to create a transaction.
 def create_unsigned_transaction(txid, vout, address, amount):
+    # Define the JSON-RPC request payload
     request_data = {
         "jsonrpc": "1.0",
         "id": "flask-app",
@@ -130,7 +131,7 @@ def create_unsigned_transaction(txid, vout, address, amount):
 
 # Helps to parse, verify and sign the unsigned raw transaction, takes in an argument called hex.
 def parse_and_sign_transaction(unsigned_hex):
-
+    # Define the JSON-RPC request payload
     request_data = {
         "jsonrpc": "1.0",
         "id": "flask-app",
@@ -213,6 +214,7 @@ def get_network_status():
 
 # Get the current block identifier
 def getcurrentblockidentifier():
+    # Define the JSON-RPC request payload
     payload = {
         "jsonrpc": "1.0",
         "id": "curltest",
@@ -230,6 +232,7 @@ def getcurrentblockidentifierheight(hash):
 
 # Get genesis block identifier
 def getgenesisblockidentifier():
+    # Define the JSON-RPC request payload
     payload = {
         "jsonrpc": "1.0",
         "id": "curltest",
@@ -245,12 +248,14 @@ def getgenesisblockidentifier():
 
 # Get current block height 
 def getcurrentblockheight():
+    # Define the JSON-RPC request payload
     payload = {}
     data = send_request("GET", "https://explorer.verus.io/api/getblockcount", {'content-type': 'text/plain;'}, payload)
     return data
 
 # Get the syncing status
 def getsyncstatus():
+    # Calculate the block sync status
     hash0 = getcurrentblockidentifier()
     height0 = getcurrentblockidentifierheight(hash0)
     height = getcurrentblockheight()
@@ -264,6 +269,7 @@ def getsyncstatus():
     return syncstat, height0, height, boolean
 
 def getpeerinfo():
+    # Define the JSON-RPC request payload
     payload = {
         "jsonrpc": "1.0",
         "id": "curltest",
@@ -426,6 +432,7 @@ def get_address_utxos(address):
 # Endpoint that is used to get the network lists.
 @app.route('/network/list', methods=['POST'])
 def network_list():
+    # request chainid from the vrsc daemon
     chain = get_network_status()
     newchainid = chain["chainid"]
     netinfo = {
@@ -442,7 +449,8 @@ def network_list():
               
   ]
               }
-    errnetinfo = {
+    # error message for /network/list endpoint
+    errnetinfo = {  
   "code": 12,
   "message": "Invalid account format",
   "description": "This error is returned when the requested AccountIdentifier is improperly formatted.",
