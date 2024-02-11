@@ -273,7 +273,7 @@ def getpeerinfo():
     }
     response_json = send_request("POST", RPCURL, {'content-type': 'text/plain;'}, payload)
     formatted_data = []
-    for item in response_json:
+    for item in response_json['result']:
         item_id = item.pop('id')  # Extract and remove the 'id' key from the dictionary
         formatted_data.append({'id': item_id, 'data': item})
 
@@ -459,7 +459,7 @@ def network_list():
 @app.route('/network/status', methods=['POST'])
 def network_status():
     data = request.get_json()
-    try:
+    if data:
         ids, metadata = getpeerinfo()
         hashhe = get_block_info(1500)
         hash = getcurrentblockidentifier()
@@ -502,8 +502,7 @@ def network_status():
         ]
         }
         return info, 200
-    except Exception as e:
-        print(e)
+    else:
         return jsonify({
             "code": 500,
             "message": "Failed to fetch network version",
@@ -1039,7 +1038,7 @@ def call_rpc():
 
 # Endpoint that is used to get a new verus address.
 @app.route('/construction/derive', methods=['POST'])
-def network_status():
+def networkstatus():
     data = getnewaddress()
 
     if data:
