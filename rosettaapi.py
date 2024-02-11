@@ -43,7 +43,6 @@ baldata = []
 # Helps to send the request to the RPC.
 def send_request(method, url, headers, data):
     response = requests.request(method, url, headers=headers, json=data, auth=(RPCUSER, RPCPASS))
-    response.raise_for_status()
     return response.json()
 
 # Fetches the network options from the RPC.
@@ -283,7 +282,7 @@ def getpeerinfo():
 
     ids = [item['id'] for item in formatted_data]
     data_without_id = [item['data'] for item in formatted_data]
-    return ids, data_without_id
+    return ids
 
 
 # Gets the block information, takes in an argument called identifier which should be a transaction ID or a block number.
@@ -460,7 +459,7 @@ def network_list():
 def network_status():
     data = request.get_json()
     if data:
-        ids, metadata = getpeerinfo()
+        ids = getpeerinfo()
         hashhe = get_block_info(1500)
         hash = getcurrentblockidentifier()
         indexval = getcurrentblockidentifierheight(hash)
@@ -496,8 +495,8 @@ def network_status():
         },
         "peers": [
             {
-            "peer_id": ids,
-            "metadata": metadata
+            "peer_id": str(ids),
+            "metadata": None
             }
         ]
         }
