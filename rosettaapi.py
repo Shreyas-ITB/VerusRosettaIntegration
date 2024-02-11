@@ -46,7 +46,6 @@ def send_request(method, url, headers, data):
     response.raise_for_status()
     return response.json()
 
-
 # Fetches the network options from the RPC.
 def get_network_options():
     # Define the JSON-RPC request payload
@@ -96,6 +95,71 @@ def get_network_options():
         # Handle the error case
         return None
 
+# Helps to create a new verus address
+def getnewaddress():
+    # Define the JSON-RPC request payload
+    payload = {
+        "jsonrpc": "1.0",
+        "id": "curltest",
+        "method": "getnewaddress",
+        "params": []
+    }
+
+    # Make the request using the provided function
+    response_json = send_request("POST", RPCURL, {'content-type': 'text/plain;'}, payload)
+    return response_json
+
+
+# Helps to create an unsigned raw transaction, takes in a few arguments to create a transaction.
+def create_unsigned_transaction(txid, vout, address, amount):
+    request_data = {
+        "jsonrpc": "1.0",
+        "id": "flask-app",
+        "method": "createrawtransaction",
+        "params": [
+            [{"txid": txid, "vout": vout}],
+            {address: amount}
+        ]
+    }
+    try:
+        result = send_request("POST", RPCURL, {'content-type': 'text/plain;'}, request_data)
+        unsigned_transaction = result.get("transaction")
+        return unsigned_transaction
+    except Exception as e:
+        raise Exception(f"Failed to create unsigned transaction: {str(e)}")
+
+
+# Helps to parse, verify and sign the unsigned raw transaction, takes in an argument called hex.
+def parse_and_sign_transaction(unsigned_hex):
+
+    request_data = {
+        "jsonrpc": "1.0",
+        "id": "flask-app",
+        "method": "signrawtransaction",
+        "params": [unsigned_hex]
+    }
+
+    try:
+        result = send_request("POST", RPCURL, {'content-type': 'text/plain;'}, request_data)
+        return result
+    except Exception as e:
+        raise Exception(f"Failed to parse and sign transaction: {str(e)}")
+
+
+# Helps to broadcast a signed raw transaction into the network, takes in an argument called hex (signed hex).
+def submit_signed_transaction(signed_hex):
+    request_data = {
+        "jsonrpc": "1.0",
+        "id": "flask-app",
+        "method": "sendrawtransaction",
+        "params": [signed_hex]
+    }
+
+    try:
+        result = send_request("POST", RPCURL, {'content-type': 'text/plain;'}, request_data)
+        return result
+    except Exception as e:
+        raise Exception(f"Failed to submit signed transaction: {str(e)}")
 
 # Fetches the network status from the RPC.
 def get_network_status():
@@ -200,18 +264,27 @@ def getsyncstatus():
         boolean = False
     return syncstat, height0, height, boolean
 
-# Get block timestamp
-def getblocktimestamp():
+def getpeerinfo():
     payload = {
         "jsonrpc": "1.0",
         "id": "curltest",
-        "method": "getinfo",
+        "method": "getpeerinfo",
         "params": []
     }
-
-    # Make the request using the provided function
     response_json = send_request("POST", RPCURL, {'content-type': 'text/plain;'}, payload)
-    return response_json['result']["tiptime"]
+    formatted_data = []
+    for item in response_json:
+        item_id = item.pop('id')  # Extract and remove the 'id' key from the dictionary
+        formatted_data.append({'id': item_id, 'data': item})
+
+    formatted_json = json.dumps(formatted_data, indent=2)
+    print(formatted_json)
+    formatted_data = json.loads(formatted_json)
+
+    ids = [item['id'] for item in formatted_data]
+    data_without_id = [item['data'] for item in formatted_data]
+    return ids, data_without_id
+
 
 # Gets the block information, takes in an argument called identifier which should be a transaction ID or a block number.
 def get_block_info(identifier):
@@ -387,26 +460,26 @@ def network_list():
 def network_status():
     data = request.get_json()
     try:
+        ids, metadata = getpeerinfo()
+        hashhe = get_block_info(1500)
         hash = getcurrentblockidentifier()
         indexval = getcurrentblockidentifierheight(hash)
         ghash, gindex = getgenesisblockidentifier()
         syncstat, height0, height, boolean = getsyncstatus()
-        timestamp = getblocktimestamp()
-        RUN_PRODUCTION = os.environ.get("RUN_PRODUCTION")
-        print(RUN_PRODUCTION)
         if RUN_PRODUCTION == "True" or RUN_PRODUCTION == "true":
             hash = hash
             indexval = indexval
         else:
-            hashhe = get_block_info(1500)
             hash = hashhe['hash']
             indexval = 1500
+        timestamp = hashhe['time']
+        milliseconds = timestamp * 1000
         info = {
         "current_block_identifier": {
             "index": indexval,
             "hash": hash
         },
-        "current_block_timestamp": 1582833600000,
+        "current_block_timestamp": milliseconds,
         "genesis_block_identifier": {
             "index": gindex,
             "hash": ghash
@@ -423,8 +496,8 @@ def network_status():
         },
         "peers": [
             {
-            "peer_id": uuid.uuid4(),
-            "metadata": None
+            "peer_id": ids,
+            "metadata": metadata
             }
         ]
         }
@@ -963,6 +1036,80 @@ def call_rpc():
         return jsonify(response), 200
     except requests.exceptions.RequestException as rpc_error:
         return jsonify({"error": str(rpc_error)}), 500
+
+# Endpoint that is used to get a new verus address.
+@app.route('/construction/derive', methods=['POST'])
+def network_status():
+    data = getnewaddress()
+
+    if data:
+        return jsonify({"address": data}), 200
+    else:
+        return jsonify({
+            "code": 500,
+            "message": "Failed to create new verus wallet address",
+            "description": "There was an error while fetching the information from the Local RPC"
+        }), 500
+
+
+# Endpoint that is used to create a raw unsigned transaction.
+@app.route('/construction/payloads', methods=['POST'])
+def create_unsigned_transaction_route():
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    txid = data.get("txid")
+    vout = data.get("vout")
+    address = data.get("address")
+    amount = data.get("amount")
+
+    if not txid or not vout or not address or not amount:
+        return jsonify({"error": "Invalid arguments"}), 400
+
+    try:
+        unsigned_transaction = create_unsigned_transaction(txid, vout, address, amount)
+        return jsonify({"transaction": unsigned_transaction}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# Endpoint that is used to verify and sign a raw unsigned transaction.
+@app.route('/construction/parse', methods=['POST'])
+def parse_and_sign_transaction_route():
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    unsigned_hex = data.get("unsigned_hex")
+
+    if not unsigned_hex:
+        return jsonify({"error": "Unsigned hex not provided"}), 400
+
+    try:
+        result = parse_and_sign_transaction(unsigned_hex)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# Endpoint that is used to broadcast a signed transaction into the blockchain.
+@app.route('/construction/submit', methods=['POST'])
+def submit_signed_transaction_route():
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    signed_hex = data.get("signed_hex")
+
+    if not signed_hex:
+        return jsonify({"error": "Signed hex not provided"}), 400
+
+    try:
+        result = submit_signed_transaction(signed_hex)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # Run the API
 if __name__ == '__main__':
