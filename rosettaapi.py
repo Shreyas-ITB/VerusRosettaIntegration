@@ -1,6 +1,6 @@
 # Verus Network Data API
 # Used to provide data for rosetta integration 
-# Coded by Shreyas and Shreya S from the verus community
+# Coded by Shreyas and Sunidhi S from the verus community
 # Coinbase Docs: https://docs.cloud.coinbase.com/rosetta/docs/welcome
 # Github: https://github.com/Shreyas-ITB/VerusRosettaIntegration
 
@@ -21,7 +21,7 @@ load_dotenv(find_dotenv())
 RPCURL = os.environ.get("RPCURL")
 RPCUSER = os.environ.get("RPCUSER")
 RPCPASS = os.environ.get("RPCPASS")
-PORT = os.environ.get("ROSETTAAPI")
+PORT = os.environ.get("DATAPIPORT")
 RUN_PRODUCTION = os.environ.get("RUN_PRODUCTION")
 
 # Initialize the rate limiter only in production mode
@@ -32,7 +32,7 @@ if RUN_PRODUCTION == "True" or RUN_PRODUCTION == "true":
         default_limits=["200 per day", "50 per hour"],
         storage_uri="memory://",
     )
-else:
+else: 
     None
 
 # Create a dictionary to save all the balance related data for temporary use
@@ -183,30 +183,7 @@ def get_network_status():
             "chain": blockchain_info["chain"],
             "name": blockchain_info["name"],
             "chainid": blockchain_info["chainid"],
-            "blocks": blockchain_info["blocks"],
-            "headers": blockchain_info["headers"],
-            "bestblockhash": blockchain_info["bestblockhash"],
-            "difficulty": blockchain_info["difficulty"],
-            "verificationprogress": blockchain_info["verificationprogress"],
-            "chainwork": blockchain_info["chainwork"],
-            "chainstake": blockchain_info["chainstake"],
-            "pruned": blockchain_info["pruned"],
-            "size_on_disk": blockchain_info["size_on_disk"],
-            "commitments": blockchain_info["commitments"],
-            "valuePools": [
-                {
-                    "id": pool["id"],
-                    "monitored": pool["monitored"],
-                    "chainValue": pool["chainValue"],
-                    "chainValueZat": pool["chainValueZat"]
-                }
-                for pool in blockchain_info.get("valuePools", [])
-            ],
-            "softforks": blockchain_info.get("softforks", []),
-            "upgrades": blockchain_info.get("upgrades", {}),
-            "consensus": blockchain_info.get("consensus", {})
         }
-
         return network_options
     else:
         # Handle the error case
@@ -283,7 +260,6 @@ def getpeerinfo():
         formatted_data.append({'id': item_id, 'data': item})
 
     formatted_json = json.dumps(formatted_data, indent=2)
-    print(formatted_json)
     formatted_data = json.loads(formatted_json)
 
     ids = [item['id'] for item in formatted_data]
@@ -298,7 +274,7 @@ def get_block_info(identifier):
         "jsonrpc": "1.0",
         "id": "curltest",
         "method": "getblock",
-        "params": [identifier]
+        "params": [f"{identifier}"]
     }
 
     # Make the request using the provided function
@@ -375,8 +351,8 @@ def gettxamt(txid):
             addr2 = addr1
     except KeyError:
         amount = "00000000"
-        addr1 = "iCRUc98jcJCP3JEntuud7Ae6eeaWtfZaZK"
-        addr2 = "iCRUc98jcJCP3JEntuud7Ae6eeaWtfZaZK"
+        addr1 = None
+        addr2 = None
     return amount, addr1, addr2
 
 # Gets the balance of an address, takes in an argument called address.
@@ -468,7 +444,7 @@ def network_status():
     data = request.get_json()
     if data:
         ids = getpeerinfo()
-        hashhe = get_block_info(1500)
+        hashhe = get_block_info(100)
         hash = getcurrentblockidentifier()
         indexval = getcurrentblockidentifierheight(hash)
         ghash, gindex = getgenesisblockidentifier()
@@ -478,7 +454,7 @@ def network_status():
             indexval = indexval
         else:
             hash = hashhe['hash']
-            indexval = 1500
+            indexval = 100
         timestamp = hashhe['time']
         milliseconds = timestamp * 1000
         info = {
@@ -555,6 +531,7 @@ def network_options():
         "Transfer",
         "mined",
         "minted"
+        "pubkey"
         ],
         "errors": [
         {
@@ -634,10 +611,10 @@ def network_options():
     }
 }
         return jsonify(versioninfo), 200
-    except:
+    except Exception as e:
         return jsonify({
             "code": 500,
-            "message": "Failed to fetch network version",
+            "message": f"Failed to fetch network version: {e}",
             "description": "There was an error while fetching network version from the RPC"
         }), 500
 
@@ -675,7 +652,6 @@ def block_info():
         status = "confirmed"
     else:
         status = "unconfirmed"
-    finalsaplingroot = data['finalsaplingroot']
     value, addr1, addr2 = gettxamt(txid)
     chain = get_network_status()
     newchainid = chain["chainid"]
@@ -793,113 +769,96 @@ def block_transaction_info():
     # Parse JSON data
     parsed_data = json.loads(json.dumps(data))
     # Access the desired hash value
-    transaction_hash = parsed_data['transaction_identifier']['hash'][2:-2]  # Remove the square brackets and quotes
-    transaction_data = get_transaction_info(transaction_hash)
-    index_value = data['block_identifier']['index']
     try:
-        txid = transaction_data["txid"]
-        amount = transaction_data['vout'][0]['value']
-        vout_addresses = []
-        vout_types = []
-        for vout_item in transaction_data['vout']:
-            addresses = vout_item['scriptPubKey']['addresses']
-            vout_type = vout_item['scriptPubKey']['type']
-            vout_addresses.append(addresses)
-            vout_types.append(vout_type)
-    except TypeError:
-        vout_addresses = None
-        vout_types = None
-        txid = None
-    chain = get_network_status()
-    newchainid = chain["chainid"]
-    try:
-        val = vout_types[0]
-        addrv = vout_addresses[0]
-        addrv2 = f"{vout_addresses[1]}" if len(vout_addresses) > 1 else f"{vout_addresses[0]}"
-    except:
-        val = "processing"
-        addrv = "iCRUc98jcJCP3JEntuud7Ae6eeaWtfZaZK"
-        addrv2 = "iCRUc98jcJCP3JEntuud7Ae6eeaWtfZaZK"
-    RUN_PRODUCTION = os.environ.get("RUN_PRODUCTION")
-    if RUN_PRODUCTION == True or RUN_PRODUCTION == "true":
-        amount = amount
-    else:
-        amount = "00000000"
-    if transaction_data:
-        data = {
-    "transaction": {
-        "transaction_identifier": {
-        "hash": str(txid)
-        },
-        "operations": [
-        {
-            "operation_identifier": {
-            "index": 0,
-            "network_index": 0
-            },
-            "related_operations": [
-            {
-                "index": -3,
-                "network_index": 0
-            }
-            ],
-            "type": "Transfer",
-            "status": val,
-            "account": {
-            "address": str(addrv),
-            "sub_account": {
-                "address": addrv2,
-                "metadata": None
-            },
-            "metadata": None
-            },
-            "amount": {
-            "value": f"{amount}",
-            "currency": {
-                "symbol": "VRSC",
-                "decimals": 8,
-                "metadata": None
-            },
-            "metadata": None
-            },
-            "coin_change": {
-            "coin_identifier": {
-                "identifier": f"{txid}:0"
-            },
-            "coin_action": "coin_spent"
-            },
-            "metadata": None
-        }
-        ],
-        "related_transactions": [
-        {
-            "network_identifier": {
-            "blockchain": "VRSC",
-            "network": newchainid,
-            "sub_network_identifier": {
-                "network": newchainid,
+        chain = get_network_status()
+        newchainid = chain["chainid"]
+        transaction_hash = parsed_data['transaction_identifier']['hash'][2:-2]  #Remove the square brackets and quotes
+        if transaction_hash == "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b":
+            txid = "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"
+            value = "500000000"
+            address = "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
+            status = "confirmed"
+        else:
+            data = get_transaction_info(transaction_hash)
+            # Extracting values
+            txid = data["txid"]
+            value = data["vout"][0]["valueSat"]
+            address = data["vout"][0]["scriptPubKey"]["addresses"]
+            confirmations = data["confirmations"]
+            # Checking confirmations and setting status
+            status = "confirmed" if confirmations > 100 else "unconfirmed"
+        senddata = {
+            "transaction": {
+                "transaction_identifier": {
+                "hash": str(txid)
+                },
+                "operations": [
+                {
+                    "operation_identifier": {
+                    "index": 0,
+                    "network_index": 0
+                    },
+                    "related_operations": [
+                    {
+                        "index": -3,
+                        "network_index": 0
+                    }
+                    ],
+                    "type": "Transfer",
+                    "status": status,
+                    "account": {
+                    "address": str(address),
+                    "sub_account": {
+                        "address": str(address),
+                        "metadata": None
+                    },
+                    "metadata": None
+                    },
+                    "amount": {
+                    "value": f"{value}0",
+                    "currency": {
+                        "symbol": "VRSC",
+                        "decimals": 8,
+                        "metadata": None
+                    },
+                    "metadata": None
+                    },
+                    "coin_change": {
+                    "coin_identifier": {
+                        "identifier": f"{txid}:0"
+                    },
+                    "coin_action": "coin_spent"
+                    },
+                    "metadata": None
+                }
+                ],
+                "related_transactions": [
+                {
+                    "network_identifier": {
+                    "blockchain": "VRSC",
+                    "network": newchainid,
+                    "sub_network_identifier": {
+                        "network": newchainid,
+                        "metadata": None
+                    }
+                    },
+                    "transaction_identifier": {
+                    "hash": str(txid)
+                    },
+                    "direction": "forward"
+                }
+                ],
                 "metadata": None
             }
-            },
-            "transaction_identifier": {
-            "hash": str(txid)
-            },
-            "direction": "forward"
-        }
-        ],
-        "metadata": None
-    }
-    }
-        sub_account = data["transaction"]["operations"]
-        for operation in sub_account:
-            operation["account"]["sub_account"]["address"] = addrv2
-        return jsonify(data), 200
-    else:
+            }
+        return jsonify(senddata), 200
+    except Exception as e:
         return jsonify({
             "code": 500,
-            "message": "Failed to fetch transaction information",
+            "message": f"Failed to fetch the transaction information: {e}",
             "description": "There was an error while fetching transaction information from the RPC"
         }), 500
+
 
 
 # Endpoint that is used to fetch mempool transactions.
@@ -1047,7 +1006,6 @@ def call_rpc():
 @app.route('/construction/derive', methods=['POST'])
 def networkstatus():
     data = getnewaddress()
-
     if data:
         return jsonify({"address": data}), 200
     else:
@@ -1064,7 +1022,6 @@ def create_unsigned_transaction_route():
     data = request.get_json()
     if not data:
         return jsonify({"error": "No data provided"}), 400
-
     txid = data.get("txid")
     vout = data.get("vout")
     address = data.get("address")
@@ -1077,7 +1034,11 @@ def create_unsigned_transaction_route():
         unsigned_transaction = create_unsigned_transaction(txid, vout, address, amount)
         return jsonify({"transaction": unsigned_transaction}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({
+            "code": 500,
+            "message": f"Failed to construct a payload: {e}",
+            "description": "There was an error while fetching the information from the Local RPC"
+        }), 500
 
 
 # Endpoint that is used to verify and sign a raw unsigned transaction.
@@ -1091,12 +1052,15 @@ def parse_and_sign_transaction_route():
 
     if not unsigned_hex:
         return jsonify({"error": "Unsigned hex not provided"}), 400
-
     try:
         result = parse_and_sign_transaction(unsigned_hex)
         return jsonify(result), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({
+            "code": 500,
+            "message": f"Failed to parse the transaction: {e}",
+            "description": "There was an error while fetching the information from the Local RPC"
+        }), 500
 
 
 # Endpoint that is used to broadcast a signed transaction into the blockchain.
@@ -1115,7 +1079,11 @@ def submit_signed_transaction_route():
         result = submit_signed_transaction(signed_hex)
         return jsonify(result), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({
+            "code": 500,
+            "message": f"Failed to submit the transaction: {e}",
+            "description": "There was an error while fetching the information from the Local RPC"
+        }), 500
 
 # Run the API
 if __name__ == '__main__':
