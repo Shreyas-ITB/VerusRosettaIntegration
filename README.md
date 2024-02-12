@@ -84,7 +84,7 @@ then run the docker builds \
 - You can also change the data in the config file according to your preference.
 - Running the API in development mode and testing is mandatory as it reduces the number of blocks and saves time. (syncing all the blocks in the network by running the CLI tool is not permitted because it consumes a lot of time and needs a very powerful computer to handle multiple requests per second thats being given out to the API, running in development mode also disables the rate limiter so that it will be easy for the CLI tool to communicate)
 
-![Testing the RosettaAPI Integration using Mesh-CLI](https://github.com/Shreyas-ITB/VerusRosettaIntegration/blob/main/resources/CLITesting.gif)
+<img src="https://github.com/Shreyas-ITB/VerusRosettaIntegration/blob/main/resources/CLITesting.gif" width="100" height="100" />
 
 ## Endpoints
 
