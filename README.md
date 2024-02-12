@@ -49,62 +49,8 @@ then run the docker builds \
 ## Testing
 
 - Download the mesh-cli (previously known as rosetta-cli) from the [github page](https://github.com/coinbase/mesh-cli/releases/tag/v0.10.3) on a linux machine.
-- create a json file named ``default.json`` in the same directory where the mesh-cli's (rosetta-cli) executable is present. (checks all the things present in the API)
-- The below json data goes in the ``default.json`` file you have created, copy the content below, paste it and save the file.
-```json
-{
- "network": {
-  "blockchain": "VRSC",
-  "network": "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV",
-  "sub_network_identifier": {
-      "network": "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV"
-    }
- },
- "online_url": "http://127.0.0.1:5500",
- "data_directory": "",
- "http_timeout": 30,
- "max_retries": 5,
- "retry_elapsed_time": 0,
- "max_online_connections": 120,
- "max_sync_concurrency": 64,
- "tip_delay": 300,
- "max_reorg_depth": 100,
- "log_configuration": false,
- "compression_disabled": false,
- "l0_in_memory_enabled": false,
- "all_in_memory_enabled": false,
- "error_stack_trace_disabled": false,
- "coin_supported": false,
- "construction": null,
- "data": {
-  "active_reconciliation_concurrency": 16,
-  "inactive_reconciliation_concurrency": 4,
-  "inactive_reconciliation_frequency": 250,
-  "log_blocks": false,
-  "log_transactions": false,
-  "log_balance_changes": false,
-  "log_reconciliations": false,
-  "ignore_reconciliation_error": false,
-  "exempt_accounts": "",
-  "bootstrap_balances": "",
-  "interesting_accounts": "",
-  "reconciliation_disabled": false,
-  "reconciliation_drain_disabled": false,
-  "inactive_discrepancy_search_disabled": false,
-  "balance_tracking_disabled": false,
-  "coin_tracking_disabled": false,
-  "status_port": 9090,
-  "results_output_file": "",
-  "pruning_block_disabled": false,
-  "pruning_balance_disabled": false,
-  "initial_balance_fetch_disabled": false
- },
- "perf": null,
- "sign": null
-}
-```
-- Create another json file with the name ``simple.json`` in the same directory where the mesh-cli's (rosetta-cli) executable is present. (checks everything except the reconcillation)
-- As usual copy the json content below, paste it in the ``simple.json`` you have created and save it.
+- Create another json file with the name ``config.json`` in the same directory where the mesh-cli's (rosetta-cli) executable is present. (checks everything except the reconcillation which is not needed)
+- As usual copy the json content below, paste it in the ``config.json`` you have created and save it.
 ```json
 {
  "network": {
@@ -132,13 +78,12 @@ then run the docker builds \
 - Run the CLI to test the API (assuming that the API is already running, and make sure that the API is running in development mode ``RUN_PRODUCTION=False`` Run production must be set to false)
 - Execute the below commands to test the API with different config files we have created.
 ```bash
-./rosetta-cli check:data --configuration-file default.json
+./rosetta-cli check:data --configuration-file config.json
 ```
-```bash
-./rosetta-cli check:data --configuration-file simple.json
-```
-- You can also change the data in these config files according to your preference.
+
+- You can also change the data in the config file according to your preference.
 - Running the API in development mode and testing is mandatory as it reduces the number of blocks and saves time. (syncing all the blocks in the network by running the CLI tool is not permitted because it consumes a lot of time and needs a very powerful computer to handle multiple requests per second thats being given out to the API, running in development mode also disables the rate limiter so that it will be easy for the CLI tool to communicate)
+
 ## Endpoints
 
 ### API Endpoints
