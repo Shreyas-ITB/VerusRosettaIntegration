@@ -23,6 +23,7 @@ RPCUSER = os.environ.get("RPCUSER")
 RPCPASS = os.environ.get("RPCPASS")
 PORT = os.environ.get("DATAPIPORT")
 RUN_PRODUCTION = os.environ.get("RUN_PRODUCTION")
+NUM_BLOCKS = os.environ.get("NUM_BLOCKS")
 
 # Initialize the rate limiter only in production mode
 if RUN_PRODUCTION == "True" or RUN_PRODUCTION == "true":
@@ -351,8 +352,8 @@ def gettxamt(txid):
             addr2 = addr1
     except KeyError:
         amount = "00000000"
-        addr1 = None
-        addr2 = None
+        addr1 = "iCRUc98jcJCP3JEntuud7Ae6eeaWtfZaZK"
+        addr2 = "iCRUc98jcJCP3JEntuud7Ae6eeaWtfZaZK"
     return amount, addr1, addr2
 
 # Gets the balance of an address, takes in an argument called address.
@@ -444,7 +445,7 @@ def network_status():
     data = request.get_json()
     if data:
         ids = getpeerinfo()
-        hashhe = get_block_info(100)
+        hashhe = get_block_info(1500)
         hash = getcurrentblockidentifier()
         indexval = getcurrentblockidentifierheight(hash)
         ghash, gindex = getgenesisblockidentifier()
@@ -454,7 +455,7 @@ def network_status():
             indexval = indexval
         else:
             hash = hashhe['hash']
-            indexval = 100
+            indexval = 1500
         timestamp = hashhe['time']
         milliseconds = timestamp * 1000
         info = {
@@ -695,7 +696,7 @@ def block_info():
                         "network_index": 0
                     }
                     ],
-                    "type": blocktype,
+                    "type": "Transfer",
                     "status": status,
                     "account": {
                     "address": addr1,
@@ -775,14 +776,28 @@ def block_transaction_info():
         transaction_hash = parsed_data['transaction_identifier']['hash'][2:-2]  #Remove the square brackets and quotes
         if transaction_hash == "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b":
             txid = "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"
-            value = "500000000"
-            address = "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
+            if RUN_PRODUCTION == "True" or RUN_PRODUCTION == "true":
+                value = "500000000"
+            else:
+                value = "00000000"
+            address = "RJJBTXXfgE5DjiPQpZSnYrQe73NhrBZ3ao"
             status = "confirmed"
         else:
-            data = get_transaction_info(transaction_hash)
+            # Split the variable by comma, strip whitespace, and remove single quotes
+            strings = [s.strip().strip("'") for s in transaction_hash.split(',')]
+
+            # Check the length of the list
+            if len(strings) > 1:
+                result = strings[0]  # Return the first string
+            else:
+                result = transaction_hash.strip("'")
+            data = get_transaction_info(result)
             # Extracting values
             txid = data["txid"]
-            value = data["vout"][0]["valueSat"]
+            if RUN_PRODUCTION == "True" or RUN_PRODUCTION == "true":
+                value = data["vout"][0]["valueSat"]
+            else:
+                value = "00000000"
             address = data["vout"][0]["scriptPubKey"]["addresses"]
             confirmations = data["confirmations"]
             # Checking confirmations and setting status
@@ -892,17 +907,19 @@ def account_balance():
     address = data['account_identifier']['address']
     balance_data = get_address_balance(address)
     baldata.append(balance_data)
-    value_satt = baldata[0]['balance']
+    try:
+        value_satt = baldata[0]['balance']
+    except:
+        value_satt = "00000000"
     value_sat = int(str(value_satt)[:8])
     index_value = data['block_identifier']['index']
     data = get_block_info(index_value)
-    if RUN_PRODUCTION == True or RUN_PRODUCTION == "true":
+    if RUN_PRODUCTION == "True" or RUN_PRODUCTION == "true":
         value_sat = value_sat
-    elif RUN_PRODUCTION == False or RUN_PRODUCTION == "false":
+    else:
         value_sat = "00000000"
     hash = data['hash']
-    if balance_data:
-        data = {
+    data = {
         "block_identifier": {
             "index": index_value,
             "hash": str(hash)
@@ -920,13 +937,13 @@ def account_balance():
         ],
         "metadata": None
         }
-        return jsonify(data), 200
-    else:
-        return jsonify({
-            "code": 500,
-            "message": "Failed to fetch balance information",
-            "description": "There was an error while fetching balance information from the API"
-        }), 500
+    return jsonify(data), 200
+    # else:
+    #     return jsonify({
+    #         "code": 500,
+    #         "message": "Failed to fetch balance information",
+    #         "description": "There was an error while fetching balance information from the API"
+    #     }), 500
 
 
 # Endpoint that is used to fetch the unspend amount of coins/transaction in an account.
