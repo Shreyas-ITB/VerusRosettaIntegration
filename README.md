@@ -50,7 +50,62 @@ then run the docker builds \
 
 - Download the mesh-cli (previously known as rosetta-cli) from the [github page](https://github.com/coinbase/mesh-cli/releases/tag/v0.10.3) on a linux machine.
 - Create another json file with the name ``config.json`` in the same directory where the mesh-cli's (rosetta-cli) executable is present. (checks everything except the reconcillation which is not needed)
-- As usual copy the json content below, paste it in the ``config.json`` you have created and save it.
+- create a json file named ``default.json`` in the same directory where the mesh-cli's (rosetta-cli) executable is present. (checks all the things present in the API)
+- The below json data goes in the ``default.json`` file you have created, copy the content below, paste it and save the file.
+```json
+{
+ "network": {
+  "blockchain": "VRSC",
+  "network": "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV",
+  "sub_network_identifier": {
+      "network": "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV"
+    }
+ },
+ "online_url": "http://127.0.0.1:5500",
+ "data_directory": "",
+ "http_timeout": 30,
+ "max_retries": 5,
+ "retry_elapsed_time": 0,
+ "max_online_connections": 120,
+ "max_sync_concurrency": 64,
+ "tip_delay": 300,
+ "max_reorg_depth": 100,
+ "log_configuration": false,
+ "compression_disabled": false,
+ "l0_in_memory_enabled": false,
+ "all_in_memory_enabled": false,
+ "error_stack_trace_disabled": false,
+ "coin_supported": false,
+ "construction": null,
+ "data": {
+  "active_reconciliation_concurrency": 16,
+  "inactive_reconciliation_concurrency": 4,
+  "inactive_reconciliation_frequency": 250,
+  "log_blocks": false,
+  "log_transactions": false,
+  "log_balance_changes": false,
+  "log_reconciliations": false,
+  "ignore_reconciliation_error": false,
+  "exempt_accounts": "",
+  "bootstrap_balances": "",
+  "interesting_accounts": "",
+  "reconciliation_disabled": false,
+  "reconciliation_drain_disabled": false,
+  "inactive_discrepancy_search_disabled": false,
+  "balance_tracking_disabled": false,
+  "coin_tracking_disabled": false,
+  "status_port": 9090,
+  "results_output_file": "",
+  "pruning_block_disabled": false,
+  "pruning_balance_disabled": false,
+  "initial_balance_fetch_disabled": false
+ },
+ "perf": null,
+ "sign": null
+}
+```
+- Create another json file with the name ``simple.json`` in the same directory where the mesh-cli's (rosetta-cli) executable is present. (checks everything except the reconcillation)
+- As usual copy the json content below, paste it in the ``simple.json`` you have created and save it.
 ```json
 {
  "network": {
@@ -746,13 +801,13 @@ Expected endpoint behaviour
 - ```/construction/derive``` Create a new wallet address.
 ```sh
 # Call the endpoint with curl:
-curl -X POST http://127.0.0.1:5600/construction/derive
+curl -X POST http://127.0.0.1:5500/construction/derive
 ```
 ```py
 # Make a request using python:
 import requests
 
-url = "http://127.0.0.1:5600/construction/derive"
+url = "http://127.0.0.1:5500/construction/derive"
 response = requests.post(url)
 print(response.json())
 ```
@@ -765,7 +820,7 @@ curl -X POST -H "Content-Type: application/json" -d '{"txid": "0x2f23fd8cca835af
 # Make a request using python:
 import requests
 
-url = "http://127.0.0.1:5600/construction/payloads"
+url = "http://127.0.0.1:5500/construction/payloads"
 payload = {
     "txid": "0x2f23fd8cca835af21f3ac375bac601f97ead75f2e79143bdf71fe2c4be043e8f",
     "vout": 0,
@@ -784,7 +839,7 @@ curl -X POST -H "Content-Type: application/json" -d '{"unsigned_hex": "f1a35d8b4
 # Make a request using python:
 import requests
 
-url = "http://127.0.0.1:5600/construction/parse"
+url = "http://127.0.0.1:5500/construction/parse"
 payload = {
     "unsigned_hex": "f1a35d8b4926c5e6d9a817abe4c3f9027d6f4a6c8e971b26e5cf61d207c3e91a"
 }
@@ -800,7 +855,7 @@ curl -X POST -H "Content-Type: application/json" -d '{"signed_hex": "a2bf8e074d6
 # Make a request using python:
 import requests
 
-url = "http://127.0.0.1:5600/construction/submit"
+url = "http://127.0.0.1:5500/construction/submit"
 payload = {
     "signed_hex": "a2bf8e074d6cf013ec012cfe2d2f37f68972165cc0a5ed13f4a5a7b234ef87b2"
 }
