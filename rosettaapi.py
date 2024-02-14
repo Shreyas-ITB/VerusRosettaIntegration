@@ -202,12 +202,6 @@ def getcurrentblockidentifier():
     response_json = send_request("POST", RPCURL, {'content-type': 'text/plain;'}, payload)
     return response_json['result']
 
-# Get current block identifier height from a hash
-def getcurrentblockidentifierheight(hash):
-    req = requests.get(f"https://explorer.verus.io/api/getblock?hash={hash}")
-    resp = req.json()['height']
-    return resp
-
 # Get genesis block identifier
 def getgenesisblockidentifier():
     # Define the JSON-RPC request payload
@@ -220,31 +214,21 @@ def getgenesisblockidentifier():
 
     # Make the request using the provided function
     response_json = send_request("POST", RPCURL, {'content-type': 'text/plain;'}, payload)
-    req = requests.get(f"https://explorer.verus.io/api/getblock?hash={response_json['result']}")
-    resp = req.json()['height']
+    resp = get_block_info(response_json['result'])
+    resp = resp['height']
     return response_json['result'], resp
 
 # Get current block height 
 def getcurrentblockheight():
     # Define the JSON-RPC request payload
-    payload = {}
-    data = send_request("GET", "https://explorer.verus.io/api/getblockcount", {'content-type': 'text/plain;'}, payload)
-    return data
-
-# Get the syncing status
-def getsyncstatus():
-    # Calculate the block sync status
-    hash0 = getcurrentblockidentifier()
-    height0 = getcurrentblockidentifierheight(hash0)
-    height = getcurrentblockheight()
-    calc = int(height) / int(height0)
-    if calc == 1:
-        syncstat = "Synced"
-        boolean = True
-    else:
-        syncstat = "Out of sync, Syncing.."
-        boolean = False
-    return syncstat, height0, height, boolean
+    payload = {
+        "jsonrpc": "1.0",
+        "id": "curltest",
+        "method": "getblockchaininfo",
+        "params": []
+    }
+    response_json = send_request("POST", RPCURL, {'content-type': 'text/plain;'}, payload)
+    return int(response_json["result"]["blocks"])
 
 def getpeerinfo():
     # Define the JSON-RPC request payload
@@ -291,6 +275,26 @@ def get_block_info(identifier):
     else:
         return None
 
+# Get current block identifier height from a hash
+def getcurrentblockidentifierheight(hash):
+    resp = get_block_info(hash)
+    resp = resp['height']
+    return resp
+
+# Get the syncing status
+def getsyncstatus():
+    # Calculate the block sync status
+    hash0 = getcurrentblockidentifier()
+    height0 = getcurrentblockidentifierheight(hash0)
+    height = getcurrentblockheight()
+    calc = int(height) / int(height0)
+    if calc == 1:
+        syncstat = "Synced"
+        boolean = True
+    else:
+        syncstat = "Out of sync, Syncing.."
+        boolean = False
+    return syncstat, height0, height, boolean
 
 # Gets the transaction information, takes in an argument called transaction ID.
 def get_transaction_info(txid):
