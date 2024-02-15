@@ -458,8 +458,8 @@ def network_status():
             hash = hash
             indexval = indexval
         else:
-            hash = hashhe['hash']
-            indexval = 1500
+            hash = hash
+            indexval = indexval
         timestamp = hashhe['time']
         milliseconds = timestamp * 1000
         info = {
