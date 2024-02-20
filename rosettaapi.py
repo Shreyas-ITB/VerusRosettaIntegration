@@ -347,14 +347,26 @@ def gettxamt(txid):
     txid = str(txid)
     cleaned_string = txid.replace("[", "").replace("]", "").replace("'", "")
     try:
-        resp = requests.get(f"https://explorer.verus.io/ext/gettx/{cleaned_string}")
-        amount = resp.json()['tx']['vin'][0]['amount']
-        addr1 = resp.json()['tx']['vout'][0]['addresses']
+        # resp = requests.get(f"https://explorer.verus.io/ext/gettx/{cleaned_string}")
+        # amount = resp.json()['tx']['vin'][0]['amount']
+        # addr1 = resp.json()['tx']['vout'][0]['addresses']
+        # try:
+        #     addr2 = resp.json()['tx']['vout'][1]['addresses']
+        # except IndexError:
+        #     addr2 = addr1
+        transaction = get_transaction_info(cleaned_string)
+        # Extract valueSat from each vout
+        valuesats = [vout["valueSat"] for vout in transaction["vout"]]
+
+        # Extract addresses from scriptPubKey for the first two vouts
+        addresses = [vout["scriptPubKey"]["addresses"] for vout in transaction["vout"][:2]]
+        amount = valuesats
+        addr1 = addresses[0][0]
         try:
-            addr2 = resp.json()['tx']['vout'][1]['addresses']
+            addr2 = addresses[1][0]
         except IndexError:
             addr2 = addr1
-    except KeyError:
+    except:
         amount = "00000000"
         addr1 = "iCRUc98jcJCP3JEntuud7Ae6eeaWtfZaZK"
         addr2 = "iCRUc98jcJCP3JEntuud7Ae6eeaWtfZaZK"
