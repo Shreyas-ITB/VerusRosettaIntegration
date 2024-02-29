@@ -1,3 +1,4 @@
+![Verus Logo](resources/VerusLogo.png?raw=true)
 # VerusRosettaIntegration
 
 The APIs that are used to link Verus blockchain with Open-Source Coinbase Rosetta Blockchain integration tools.
