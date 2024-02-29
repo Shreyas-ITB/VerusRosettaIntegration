@@ -698,7 +698,7 @@ def block_info():
             "transactions": [
             {
                 "transaction_identifier": {
-                "hash": str(txid)
+                "hash": str(txid[:5])
                 },
                 "operations": [
                 {
@@ -752,7 +752,7 @@ def block_info():
                     }
                     },
                     "transaction_identifier": {
-                    "hash": str(txid)
+                    "hash": str(txid[:5])
                     },
                     "direction": "forward"
                 }
@@ -764,7 +764,7 @@ def block_info():
         },
         "other_transactions": [
             {
-            "hash": str(txid)
+            "hash": str(txid[:5])
             }
         ]
         }
