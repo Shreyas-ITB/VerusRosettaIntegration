@@ -870,3 +870,9 @@ print(response.json())
 ## Information
 - This is a complete python implementation, there is no use of rosetta-sdks which use golang to implement the same routes into other blockchains. Since python is way more reliable, easy and flexible i have used it.
 - Both the python APIs contain commented lines so that anyone who will be contributing to this project can easily understand whats going on in the code.
+
+---
+## Donation
+
+VRSC: [Shreyas-ITB@](https://insight.verus.io/address/Shreyas-ITB@)
+VRSC: [mike@](https://insight.verus.io/address/mike@)
