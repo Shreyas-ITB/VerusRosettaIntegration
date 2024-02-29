@@ -874,5 +874,5 @@ print(response.json())
 ---
 ## Donation
 
-VRSC: [Shreyas-ITB@](https://insight.verus.io/address/Shreyas-ITB@)
-VRSC: [mike@](https://insight.verus.io/address/mike@)
+- VRSC: [Shreyas-ITB@](https://insight.verus.io/address/Shreyas-ITB@)
+- VRSC: [mike@](https://insight.verus.io/address/mike@)
