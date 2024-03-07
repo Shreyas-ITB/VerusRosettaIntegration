@@ -698,7 +698,7 @@ def block_info():
             "transactions": [
             {
                 "transaction_identifier": {
-                "hash": str(txid[:5])
+                "hash": str(txid[:1])
                 },
                 "operations": [
                 {
@@ -752,7 +752,7 @@ def block_info():
                     }
                     },
                     "transaction_identifier": {
-                    "hash": str(txid[:5])
+                    "hash": str(txid[:1])
                     },
                     "direction": "forward"
                 }
@@ -764,7 +764,7 @@ def block_info():
         },
         "other_transactions": [
             {
-            "hash": str(txid[:5])
+            "hash": str(txid[:1])
             }
         ]
         }
@@ -814,7 +814,10 @@ def block_transaction_info():
                 value = data["vout"][0]["valueSat"]
             else:
                 value = "00000000"
-            address = data["vout"][0]["scriptPubKey"]["addresses"]
+            try:
+                address = data["vout"][0]["scriptPubKey"]["addresses"]
+            except:
+                address = "RJJBTXXfgE5DjiPQpZSnYrQe73NhrBZ3ao"
             confirmations = data["confirmations"]
             # Checking confirmations and setting status
             status = "confirmed" if confirmations > 100 else "unconfirmed"
