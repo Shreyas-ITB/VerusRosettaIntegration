@@ -22,7 +22,7 @@ Rename the ``example.env`` into ``.env`` and then edit the following information
 RPCURL=http://127.0.0.1:27486/ # The default verus daemon local url. Recommended to leave it alone.
 RPCUSER="" # The RPC Username located in the vrsc.conf file inside the "~/.komodo/VRSC" folder
 RPCPASS="" # The RPC Password located in the vrsc.conf file inside the "~/.komodo/VRSC" folder.
-ROSETTAAPI=5500 # Default API Port.
+APIPORT=5500 # Default API Port.
 RUN_PRODUCTION=False # Run the APIs in production mode.
 ```
 Changing the ``RUN_PRODUCTION`` to ``True`` runs the APIs in production mode (this applies for both the data and construction APIs) if its kept ``False`` then it would run in development mode.
