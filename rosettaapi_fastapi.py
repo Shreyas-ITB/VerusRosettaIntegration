@@ -1,6 +1,6 @@
 # Verus Network Data API
 # Used to provide data for rosetta integration 
-# Coded by Shreyas and Sunidhi S from the verus community
+# Coded by Shreyas from the verus community
 # Coinbase Docs: https://docs.cloud.coinbase.com/rosetta/docs/welcome
 # Github: https://github.com/Shreyas-ITB/VerusRosettaIntegration
 
